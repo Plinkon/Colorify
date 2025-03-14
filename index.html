@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colorify - ANSI Escape Code Generator</title>
+  <style>
+    :root {
+      /* Updated theme colors with pastel elements */
+      --colorify-dark: #1A1F2C;
+      --colorify-dark-alt: #232A3B;
+      --colorify-bg: #1E2337;
+      --colorify-bg-lighter: #262C42;
+      --colorify-text: #E9ECFF;
+      --colorify-text-muted: #A3AECC;
+      --colorify-accent-green: #98D35C;
+      --colorify-accent-blue: #7BA4F7;
+      --colorify-accent-purple: #B893FC;
+      --colorify-accent-pink: #FF9DC7;
+      --colorify-accent-cyan: #61D1E2;
+      --colorify-border: rgba(255, 255, 255, 0.1);
+      --colorify-card-bg: rgba(36, 41, 63, 0.7);
+      --colorify-card-hover: rgba(46, 52, 77, 0.9);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, var(--colorify-bg) 0%, #181E30 100%);
+      color: var(--colorify-text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* Updated header with pastel gradient */
+    .app-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, #1E2337 0%, #252B41 50%, #2A3251 100%);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--colorify-border);
+    }
+
+    .app-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(to right, var(--colorify-accent-blue), var(--colorify-accent-purple), var(--colorify-accent-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .app-description {
+      color: var(--colorify-text-muted);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Navigation */
+    .app-nav {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .nav-button {
+      background-color: var(--colorify-bg-lighter);
+      color: var(--colorify-text-muted);
+      border: 1px solid var(--colorify-border);
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .nav-button:hover {
+      background-color: var(--colorify-card-hover);
+      color: var(--colorify-text);
+    }
+
+    .nav-button.active {
+      background: linear-gradient(135deg, var(--colorify-accent-blue) 0%, var(--colorify-accent-purple) 100%);
+      color: white;
+      border-color: transparent;
+    }
+
+    /* Mobile navigation */
+    .mobile-nav {
+      display: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-select {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: var(--colorify-dark-alt);
+      color: var(--colorify-text);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.5rem;
+      font-size: 1rem;
+    }
+
+    /* Content sections */
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .section-title {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+      color: var(--colorify-text);
+    }
+
+    .section-description {
+      color: var(--colorify-text-muted);
+      margin-bottom: 2rem;
+    }
+
+    /* Search bar */
+    .search-container {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      background-color: var(--colorify-bg-lighter);
+      color: var(--colorify-text);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--colorify-text-muted);
+    }
+
+    .search-shimmer {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(to right, var(--colorify-accent-blue), var(--colorify-accent-purple));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    /* Grid layout for color cards */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Color card */
+    .color-card {
+      background-color: var(--colorify-card-bg);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .color-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      background-color: var(--colorify-card-hover);
+    }
+
+    .color-card.selected {
+      border-color: var(--colorify-accent-blue);
+      box-shadow: 0 0 0 2px var(--colorify-accent-blue);
+    }
+
+    .color-card.copy-animation {
+      animation: pulse 0.5s;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(123, 164, 247, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(123, 164, 247, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(123, 164, 247, 0); }
+    }
+
+    .color-card-inner {
+      padding: 1rem;
+    }
+
+    .color-swatch {
+      height: 100px;
+      margin-bottom: 1rem;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    .color-swatch-bg {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .color-swatch-content {
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    .color-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .color-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .copy-button {
+      background: none;
+      border: none;
+      color: var(--colorify-text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      transition: color 0.2s;
+    }
+
+    .copy-button:hover {
+      color: var(--colorify-text);
+    }
+
+    .color-code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      margin-bottom: 0.5rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      color: var(--colorify-text-muted);
+    }
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      color: var(--colorify-text-muted);
+    }
+
+    /* Tag colors */
+    .tag.foreground { background-color: rgba(152, 211, 92, 0.2); color: var(--colorify-accent-green); }
+    .tag.background { background-color: rgba(123, 164, 247, 0.2); color: var(--colorify-accent-blue); }
+    .tag.formatting { background-color: rgba(184, 147, 252, 0.2); color: var(--colorify-accent-purple); }
+    .tag.cursor { background-color: rgba(255, 157, 199, 0.2); color: var(--colorify-accent-pink); }
+    .tag.movement { background-color: rgba(255, 157, 199, 0.2); color: var(--colorify-accent-pink); }
+    .tag.erase { background-color: rgba(255, 157, 199, 0.2); color: var(--colorify-accent-pink); }
+    .tag.save { background-color: rgba(255, 157, 199, 0.2); color: var(--colorify-accent-pink); }
+    .tag.rgb { background-color: rgba(97, 209, 226, 0.2); color: var(--colorify-accent-cyan); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      background-color: var(--colorify-bg-lighter);
+      border-radius: 0.75rem;
+      border: 1px dashed var(--colorify-border);
+    }
+
+    .empty-icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+      color: var(--colorify-text-muted);
+    }
+
+    .empty-title {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: var(--colorify-text);
+    }
+
+    .empty-description {
+      color: var(--colorify-text-muted);
+    }
+
+    /* Gallery controls */
+    .gallery-controls {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .gallery-status {
+      color: var(--colorify-text-muted);
+      display: flex;
+      align-items: center;
+    }
+
+    .gallery-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .gallery-button {
+      background-color: var(--colorify-bg-lighter);
+      color: var(--colorify-text);
+      border: 1px solid var(--colorify-border);
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background-color 0.2s;
+    }
+
+    .gallery-button:hover {
+      background-color: var(--colorify-card-hover);
+    }
+
+    .gallery-button.primary {
+      background: linear-gradient(to right, var(--colorify-accent-blue), var(--colorify-accent-purple));
+      color: white;
+      border: none;
+    }
+
+    /* Filter panel */
+    .filters-panel {
+      background-color: var(--colorify-bg-lighter);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .filters-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .filters-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .close-filters-button {
+      background: none;
+      border: none;
+      color: var(--colorify-text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+
+    .filters-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .filter-section {
+      margin-bottom: 1rem;
+    }
+
+    .filter-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--colorify-text-muted);
+      font-size: 0.9rem;
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .tag-button {
+      background-color: rgba(0, 0, 0, 0.2);
+      color: var(--colorify-text-muted);
+      border: 1px solid transparent;
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .tag-button:hover {
+      background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .tag-button.active {
+      background-color: transparent;
+      color: var(--colorify-text);
+    }
+
+    .tag-button.active.foreground { border-color: var(--colorify-accent-green); color: var(--colorify-accent-green); }
+    .tag-button.active.background { border-color: var(--colorify-accent-blue); color: var(--colorify-accent-blue); }
+    .tag-button.active.formatting { border-color: var(--colorify-accent-purple); color: var(--colorify-accent-purple); }
+    .tag-button.active.cursor { border-color: var(--colorify-accent-pink); color: var(--colorify-accent-pink); }
+    .tag-button.active.movement { border-color: var(--colorify-accent-pink); color: var(--colorify-accent-pink); }
+    .tag-button.active.erase { border-color: var(--colorify-accent-pink); color: var(--colorify-accent-pink); }
+    .tag-button.active.save { border-color: var(--colorify-accent-pink); color: var(--colorify-accent-pink); }
+    .tag-button.active.rgb { border-color: var(--colorify-accent-cyan); color: var(--colorify-accent-cyan); }
+
+    /* Filter type toggle */
+    .filter-mode-label {
+      display: inline-block;
+      margin-right: 0.5rem;
+      color: var(--colorify-text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Sort control */
+    .sort-select {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      color: var(--colorify-text);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    /* Generator */
+    .generator-container {
+      background-color: var(--colorify-card-bg);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      padding: 1.5rem;
+    }
+
+    .generator-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .generator-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .preview-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--colorify-dark);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      transition: background-color 0.2s;
+    }
+
+    .preview-text {
+      font-size: 1.5rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .generator-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-label {
+      color: var(--colorify-text-muted);
+      font-size: 0.9rem;
+    }
+
+    .color-input-group {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .color-picker {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 40px;
+      padding: 0;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      background-color: transparent;
+    }
+
+    .color-picker::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .color-picker::-webkit-color-swatch {
+      border: none;
+      border-radius: 0.25rem;
+    }
+
+    .hex-input {
+      width: 120px;
+      padding: 0.5rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      color: var(--colorify-text);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.25rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+    }
+
+    .type-toggle {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .type-button {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      color: var(--colorify-text-muted);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .type-button:hover {
+      background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .type-button.active.foreground {
+      background-color: rgba(152, 211, 92, 0.2);
+      color: var(--colorify-accent-green);
+      border-color: var(--colorify-accent-green);
+    }
+
+    .type-button.active.background {
+      background-color: rgba(123, 164, 247, 0.2);
+      color: var(--colorify-accent-blue);
+      border-color: var(--colorify-accent-blue);
+    }
+
+    .name-input {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      color: var(--colorify-text);
+      border: 1px solid var(--colorify-border);
+      border-radius: 0.25rem;
+      font-size: 1rem;
+    }
+
+    .code-output {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      color: var(--colorify-text-muted);
+      position: relative;
+    }
+
+    .generator-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .generator-button {
+      flex: 1;
+      background-color: var(--colorify-bg-lighter);
+      color: var(--colorify-text);
+      border: 1px solid var(--colorify-border);
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .generator-button:hover {
+      background-color: var(--colorify-card-hover);
+    }
+
+    .generator-button.primary {
+      background: linear-gradient(to right, var(--colorify-accent-blue), var(--colorify-accent-purple));
+      color: white;
+      border: none;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .app-nav {
+        display: none;
+      }
+
+      .mobile-nav {
+        display: block;
+      }
+
+      .generator-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filters-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- App Header -->
+    <header class="app-header">
+      <h1 class="app-title">Colorify</h1>
+      <p class="app-description">Generate and manage ANSI escape code colors for your terminal applications.</p>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="app-nav">
+      <button class="nav-button active" data-section="cheatsheet">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        ANSI Cheatsheet
+      </button>
+      <button class="nav-button" data-section="generator">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+        Color Generator
+      </button>
+      <button class="nav-button" data-section="gallery">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        My Color Gallery
+      </button>
+    </nav>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav">
+      <select id="section-select" class="section-select">
+        <option value="cheatsheet">ANSI Cheatsheet</option>
+        <option value="generator">Color Generator</option>
+        <option value="gallery">My Color Gallery</option>
+      </select>
+    </div>
+
+    <!-- Cheatsheet Section -->
+    <section id="cheatsheet-section" class="section active">
+      <h2 class="section-title">ANSI Escape Code Cheatsheet</h2>
+      <p class="section-description">Browse and search common ANSI escape codes for terminal styling. Click a color to select it, and use the copy button to copy the code.</p>
+      
+      <div class="search-container">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="cheatsheet-search" class="search-input" placeholder="Search codes by name or tag...">
+        <div class="search-shimmer"></div>
+      </div>
+      
+      <div id="cheatsheet-grid" class="color-grid">
+        <!-- Color cards will be inserted here -->
+      </div>
+    </section>
+
+    <!-- Generator Section -->
+    <section id="generator-section" class="section">
+      <h2 class="section-title">RGB Color Generator</h2>
+      <p class="section-description">Create custom RGB colors with ANSI escape codes for foreground or background text styling.</p>
+      
+      <div class="generator-container">
+        <div class="generator-grid">
+          <div class="generator-preview">
+            <div id="color-preview" class="preview-box">
+              <span class="preview-text">Sample Text</span>
+            </div>
+            
+            <div class="code-output" id="code-output">
+              \033[38;2;152;211;92m
+            </div>
+            
+            <button id="copy-code-button" class="generator-button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Copy Code
+            </button>
+          </div>
+          
+          <div class="generator-form">
+            <div class="form-group">
+              <label class="form-label">Select Color</label>
+              <div class="color-input-group">
+                <input type="color" id="color-picker" class="color-picker" value="#98D35C">
+                <input type="text" id="color-hex" class="hex-input" value="#98D35C">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Color Type</label>
+              <div class="type-toggle">
+                <button id="foreground-button" class="type-button active foreground">Foreground</button>
+                <button id="background-button" class="type-button background">Background</button>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Color Name</label>
+              <input type="text" id="color-name" class="name-input" placeholder="e.g. Mint Green">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Tags</label>
+              <div id="tag-buttons" class="filter-buttons">
+                <!-- Tag buttons will be inserted here -->
+              </div>
+            </div>
+            
+            <button id="save-color-button" class="generator-button primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              Save to Gallery
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery-section" class="section">
+      <h2 class="section-title">My Color Gallery</h2>
+      <p class="section-description">View, manage, and export your saved colors. Select colors to include them in your export file.</p>
+      
+      <div class="search-container">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="gallery-search" class="search-input" placeholder="Search by name, code, or tag...">
+      </div>
+      
+      <div class="gallery-controls">
+        <div class="gallery-status">
+          <span id="gallery-status-text">0 colors • 0 selected</span>
+        </div>
+        
+        <div class="gallery-actions">
+          <button id="filter-button" class="gallery-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            Filters
+          </button>
+          <button id="select-all-button" class="gallery-button">Select All</button>
+          <button id="download-button" class="gallery-button primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export
+          </button>
+        </div>
+      </div>
+      
+      <div id="filters-panel" class="filters-panel">
+        <div class="filters-header">
+          <div class="filters-title">Filter Options</div>
+          <button id="close-filters-button" class="close-filters-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="filters-content">
+          <div class="filter-section">
+            <label class="filter-label">Tags</label>
+            <div id="gallery-tag-filters" class="filter-buttons">
+              <!-- Tag buttons will be inserted here -->
+            </div>
+          </div>
+          
+          <div class="filter-section">
+            <label class="filter-label">Filter Mode</label>
+            <div class="filter-buttons">
+              <button id="union-filter-button" class="tag-button active">Match Any Tag (OR)</button>
+              <button id="intersection-filter-button" class="tag-button">Match All Tags (AND)</button>
+            </div>
+          </div>
+          
+          <div class="filter-section">
+            <label class="filter-label">Sort By</label>
+            <select id="sort-select" class="sort-select">
+              <option value="name">Name (A-Z)</option>
+              <option value="date">Date Added (Newest First)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div id="gallery-grid" class="color-grid">
+        <!-- Color cards will be inserted here -->
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Color class definition
+    class ColorItem {
+      constructor(id, name, code, preview, tags) {
+        this.id = id;
+        this.name = name;
+        this.code = code;
+        this.preview = preview;
+        this.tags = tags;
+        this.createdAt = Date.now();
+      }
+    }
+
+    // Utility functions
+    const generateId = () => {
+      return '_' + Math.random().toString(36).substring(2, 11);
+    };
+
+    const showToast = (message, type = 'success') => {
+      // Remove any existing toast
+      const existingToast = document.querySelector('.toast');
+      if (existingToast) {
+        document.body.removeChild(existingToast);
+      }
+      
+      // Create a new toast
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'error' ? 'toast-error' : ''}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      // Trigger animation
+      setTimeout(() => {
+        toast.style.transform = 'translateY(0)';
+        toast.style.opacity = '1';
+      }, 10);
+      
+      // Auto-dismiss after delay
+      setTimeout(() => {
+        toast.style.transform = 'translateY(-20px)';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+          if (toast.parentNode) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }, 3000);
+    };
+    
+    const copyToClipboard = async (text) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (error) {
+        console.error('Failed to copy to clipboard:', error);
+        return false;
+      }
+    };
+
+    const hexToRgb = (hex) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    };
+    
+    const hexToAnsi = (hex, isForeground) => {
+      const rgb = hexToRgb(hex);
+      if (!rgb) return '';
+      
+      const { r, g, b } = rgb;
+      return `\u001b[${isForeground ? '38' : '48'};2;${r};${g};${b}m`;
+    };
+    
+    const toCppStringLiteral = (str) => {
+      return str.replace(/\u001b/g, '\\033');
+    };
+
+    // ANSI cheatsheet data - FORMATTING AND SPECIAL CODES ONLY (removed normal colors)
+    const ansiCheatsheet = [
+      // Formatting codes
+      new ColorItem('reset', 'Reset All', '\\033[0m', '\u001b[0m', ['formatting', 'reset']),
+      new ColorItem('bold', 'Bold', '\\033[1m', '\u001b[1m', ['formatting', 'bold']),
+      new ColorItem('dim', 'Dim/Faint', '\\033[2m', '\u001b[2m', ['formatting', 'dim']),
+      new ColorItem('italic', 'Italic', '\\033[3m', '\u001b[3m', ['formatting', 'italic']),
+      new ColorItem('underline', 'Underline', '\\033[4m', '\u001b[4m', ['formatting', 'underline']),
+      new ColorItem('blink', 'Blink', '\\033[5m', '\u001b[5m', ['formatting', 'blink']),
+      new ColorItem('reverse', 'Reverse Colors', '\\033[7m', '\u001b[7m', ['formatting', 'reverse']),
+      new ColorItem('hidden', 'Hidden/Invisible', '\\033[8m', '\u001b[8m', ['formatting', 'hidden']),
+      new ColorItem('strikethrough', 'Strikethrough', '\\033[9m', '\u001b[9m', ['formatting', 'strikethrough']),
+      
+      // Cursor movement
+      new ColorItem('cursor_up', 'Cursor Up', '\\033[1A', '\u001b[1A', ['cursor', 'movement']),
+      new ColorItem('cursor_down', 'Cursor Down', '\\033[1B', '\u001b[1B', ['cursor', 'movement']),
+      new ColorItem('cursor_right', 'Cursor Right', '\\033[1C', '\u001b[1C', ['cursor', 'movement']),
+      new ColorItem('cursor_left', 'Cursor Left', '\\033[1D', '\u001b[1D', ['cursor', 'movement']),
+      new ColorItem('cursor_position', 'Cursor Position', '\\033[1;1H', '\u001b[1;1H', ['cursor', 'movement']),
+      
+      // Screen/line manipulation
+      new ColorItem('clear_screen', 'Clear Screen', '\\033[2J', '\u001b[2J', ['erase']),
+      new ColorItem('clear_line', 'Clear Line', '\\033[2K', '\u001b[2K', ['erase']),
+      new ColorItem('save_cursor', 'Save Cursor Position', '\\033[s', '\u001b[s', ['cursor', 'save']),
+      new ColorItem('restore_cursor', 'Restore Cursor Position', '\\033[u', '\u001b[u', ['cursor', 'save'])
+    ];
+
+    // Color tag options
+    const colorTags = ['foreground', 'background', 'formatting', 'cursor', 'rgb', 'movement', 'erase', 'save'];
+
+    // A large collection of 200+ additional colors for the gallery
+    const additionalColors = [
+      // Common Colors FG
+      new ColorItem('fg_black', 'Black (FG)', '\\033[38;2;0;0;0m', '\u001b[38;2;0;0;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_red', 'Red (FG)', '\\033[38;2;255;0;0m', '\u001b[38;2;255;0;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_green', 'Green (FG)', '\\033[38;2;0;255;0m', '\u001b[38;2;0;255;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_yellow', 'Yellow (FG)', '\\033[38;2;255;255;0m', '\u001b[38;2;255;255;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_blue', 'Blue (FG)', '\\033[38;2;0;0;255m', '\u001b[38;2;0;0;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_magenta', 'Magenta (FG)', '\\033[38;2;255;0;255m', '\u001b[38;2;255;0;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_cyan', 'Cyan (FG)', '\\033[38;2;0;255;255m', '\u001b[38;2;0;255;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_white', 'White (FG)', '\\033[38;2;255;255;255m', '\u001b[38;2;255;255;255m', ['foreground', 'rgb']),
+
+      // Common Colors BG
+      new ColorItem('bg_black', 'Black (BG)', '\\033[48;2;0;0;0m', '\u001b[48;2;0;0;0m', ['background', 'rgb']),
+      new ColorItem('bg_red', 'Red (BG)', '\\033[48;2;255;0;0m', '\u001b[48;2;255;0;0m', ['background', 'rgb']),
+      new ColorItem('bg_green', 'Green (BG)', '\\033[48;2;0;255;0m', '\u001b[48;2;0;255;0m', ['background', 'rgb']),
+      new ColorItem('bg_yellow', 'Yellow (BG)', '\\033[48;2;255;255;0m', '\u001b[48;2;255;255;0m', ['background', 'rgb']),
+      new ColorItem('bg_blue', 'Blue (BG)', '\\033[48;2;0;0;255m', '\u001b[48;2;0;0;255m', ['background', 'rgb']),
+      new ColorItem('bg_magenta', 'Magenta (BG)', '\\033[48;2;255;0;255m', '\u001b[48;2;255;0;255m', ['background', 'rgb']),
+      new ColorItem('bg_cyan', 'Cyan (BG)', '\\033[48;2;0;255;255m', '\u001b[48;2;0;255;255m', ['background', 'rgb']),
+      new ColorItem('bg_white', 'White (BG)', '\\033[48;2;255;255;255m', '\u001b[48;2;255;255;255m', ['background', 'rgb']),
+
+      // Pastel Foreground Colors
+      new ColorItem('fg_pastel_pink', 'Pastel Pink (FG)', '\\033[38;2;255;209;220m', '\u001b[38;2;255;209;220m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_blue', 'Pastel Blue (FG)', '\\033[38;2;173;216;230m', '\u001b[38;2;173;216;230m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_mint', 'Pastel Mint (FG)', '\\033[38;2;152;255;152m', '\u001b[38;2;152;255;152m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_lavender', 'Pastel Lavender (FG)', '\\033[38;2;230;230;250m', '\u001b[38;2;230;230;250m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_peach', 'Pastel Peach (FG)', '\\033[38;2;255;218;185m', '\u001b[38;2;255;218;185m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_yellow', 'Pastel Yellow (FG)', '\\033[38;2;255;255;186m', '\u001b[38;2;255;255;186m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_cyan', 'Pastel Cyan (FG)', '\\033[38;2;175;238;238m', '\u001b[38;2;175;238;238m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_lilac', 'Pastel Lilac (FG)', '\\033[38;2;200;162;200m', '\u001b[38;2;200;162;200m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_coral', 'Pastel Coral (FG)', '\\033[38;2;255;127;80m', '\u001b[38;2;255;127;80m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_olive', 'Pastel Olive (FG)', '\\033[38;2;128;128;0m', '\u001b[38;2;128;128;0m', ['foreground', 'rgb']),
+      
+      // Pastel Background Colors
+      new ColorItem('bg_pastel_pink', 'Pastel Pink (BG)', '\\033[48;2;255;209;220m', '\u001b[48;2;255;209;220m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_blue', 'Pastel Blue (BG)', '\\033[48;2;173;216;230m', '\u001b[48;2;173;216;230m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_mint', 'Pastel Mint (BG)', '\\033[48;2;152;255;152m', '\u001b[48;2;152;255;152m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_lavender', 'Pastel Lavender (BG)', '\\033[48;2;230;230;250m', '\u001b[48;2;230;230;250m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_peach', 'Pastel Peach (BG)', '\\033[48;2;255;218;185m', '\u001b[48;2;255;218;185m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_yellow', 'Pastel Yellow (BG)', '\\033[48;2;255;255;186m', '\u001b[48;2;255;255;186m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_cyan', 'Pastel Cyan (BG)', '\\033[48;2;175;238;238m', '\u001b[48;2;175;238;238m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_lilac', 'Pastel Lilac (BG)', '\\033[48;2;200;162;200m', '\u001b[48;2;200;162;200m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_coral', 'Pastel Coral (BG)', '\\033[48;2;255;127;80m', '\u001b[48;2;255;127;80m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_olive', 'Pastel Olive (BG)', '\\033[48;2;128;128;0m', '\u001b[48;2;128;128;0m', ['background', 'rgb']),
+      
+      // Vibrant Foreground Colors
+      new ColorItem('fg_vibrant_red', 'Vibrant Red (FG)', '\\033[38;2;255;0;0m', '\u001b[38;2;255;0;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_vibrant_green', 'Vibrant Green (FG)', '\\033[38;2;0;255;0m', '\u001b[38;2;0;255;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_vibrant_blue', 'Vibrant Blue (FG)', '\\033[38;2;0;0;255m', '\u001b[38;2;0;0;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_vibrant_yellow', 'Vibrant Yellow (FG)', '\\033[38;2;255;255;0m', '\u001b[38;2;255;255;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_vibrant_purple', 'Vibrant Purple (FG)', '\\033[38;2;255;0;255m', '\u001b[38;2;255;0;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_vibrant_cyan', 'Vibrant Cyan (FG)', '\\033[38;2;0;255;255m', '\u001b[38;2;0;255;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_vibrant_orange', 'Vibrant Orange (FG)', '\\033[38;2;255;165;0m', '\u001b[38;2;255;165;0m', ['foreground', 'rgb']),
+      
+      // Vibrant Background Colors
+      new ColorItem('bg_vibrant_red', 'Vibrant Red (BG)', '\\033[48;2;255;0;0m', '\u001b[48;2;255;0;0m', ['background', 'rgb']),
+      new ColorItem('bg_vibrant_green', 'Vibrant Green (BG)', '\\033[48;2;0;255;0m', '\u001b[48;2;0;255;0m', ['background', 'rgb']),
+      new ColorItem('bg_vibrant_blue', 'Vibrant Blue (BG)', '\\033[48;2;0;0;255m', '\u001b[48;2;0;0;255m', ['background', 'rgb']),
+      new ColorItem('bg_vibrant_yellow', 'Vibrant Yellow (BG)', '\\033[48;2;255;255;0m', '\u001b[48;2;255;255;0m', ['background', 'rgb']),
+      new ColorItem('bg_vibrant_purple', 'Vibrant Purple (BG)', '\\033[48;2;255;0;255m', '\u001b[48;2;255;0;255m', ['background', 'rgb']),
+      new ColorItem('bg_vibrant_cyan', 'Vibrant Cyan (BG)', '\\033[48;2;0;255;255m', '\u001b[48;2;0;255;255m', ['background', 'rgb']),
+      new ColorItem('bg_vibrant_orange', 'Vibrant Orange (BG)', '\\033[48;2;255;165;0m', '\u001b[48;2;255;165;0m', ['background', 'rgb']),
+      
+      // Neon Foreground Colors
+      new ColorItem('fg_neon_pink', 'Neon Pink (FG)', '\\033[38;2;255;20;147m', '\u001b[38;2;255;20;147m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_green', 'Neon Green (FG)', '\\033[38;2;57;255;20m', '\u001b[38;2;57;255;20m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_blue', 'Neon Blue (FG)', '\\033[38;2;31;81;255m', '\u001b[38;2;31;81;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_orange', 'Neon Orange (FG)', '\\033[38;2;255;103;0m', '\u001b[38;2;255;103;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_yellow', 'Neon Yellow (FG)', '\\033[38;2;246;255;0m', '\u001b[38;2;246;255;0m', ['foreground', 'rgb']),
+      
+      // Neon Background Colors
+      new ColorItem('bg_neon_pink', 'Neon Pink (BG)', '\\033[48;2;255;20;147m', '\u001b[48;2;255;20;147m', ['background', 'rgb']),
+      new ColorItem('bg_neon_green', 'Neon Green (BG)', '\\033[48;2;57;255;20m', '\u001b[48;2;57;255;20m', ['background', 'rgb']),
+      new ColorItem('bg_neon_blue', 'Neon Blue (BG)', '\\033[48;2;31;81;255m', '\u001b[48;2;31;81;255m', ['background', 'rgb']),
+      new ColorItem('bg_neon_orange', 'Neon Orange (BG)', '\\033[48;2;255;103;0m', '\u001b[48;2;255;103;0m', ['background', 'rgb']),
+      new ColorItem('bg_neon_yellow', 'Neon Yellow (BG)', '\\033[48;2;246;255;0m', '\u001b[48;2;246;255;0m', ['background', 'rgb']),
+      
+      // Earth Tones - Foreground
+      new ColorItem('fg_earth_brown', 'Earth Brown (FG)', '\\033[38;2;139;69;19m', '\u001b[38;2;139;69;19m', ['foreground', 'rgb']),
+      new ColorItem('fg_earth_sienna', 'Sienna (FG)', '\\033[38;2;160;82;45m', '\u001b[38;2;160;82;45m', ['foreground', 'rgb']),
+      new ColorItem('fg_earth_terracotta', 'Terracotta (FG)', '\\033[38;2;204;78;55m', '\u001b[38;2;204;78;55m', ['foreground', 'rgb']),
+      new ColorItem('fg_earth_khaki', 'Khaki (FG)', '\\033[38;2;240;230;140m', '\u001b[38;2;240;230;140m', ['foreground', 'rgb']),
+      new ColorItem('fg_earth_olive', 'Olive (FG)', '\\033[38;2;128;128;0m', '\u001b[38;2;128;128;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_earth_sage', 'Sage (FG)', '\\033[38;2;188;196;164m', '\u001b[38;2;188;196;164m', ['foreground', 'rgb']),
+      
+      // Earth Tones - Background
+      new ColorItem('bg_earth_brown', 'Earth Brown (BG)', '\\033[48;2;139;69;19m', '\u001b[48;2;139;69;19m', ['background', 'rgb']),
+      new ColorItem('bg_earth_sienna', 'Sienna (BG)', '\\033[48;2;160;82;45m', '\u001b[48;2;160;82;45m', ['background', 'rgb']),
+      new ColorItem('bg_earth_terracotta', 'Terracotta (BG)', '\\033[48;2;204;78;55m', '\u001b[48;2;204;78;55m', ['background', 'rgb']),
+      new ColorItem('bg_earth_khaki', 'Khaki (BG)', '\\033[48;2;240;230;140m', '\u001b[48;2;240;230;140m', ['background', 'rgb']),
+      new ColorItem('bg_earth_olive', 'Olive (BG)', '\\033[48;2;128;128;0m', '\u001b[48;2;128;128;0m', ['background', 'rgb']),
+      new ColorItem('bg_earth_sage', 'Sage (BG)', '\\033[48;2;188;196;164m', '\u001b[48;2;188;196;164m', ['background', 'rgb']),
+      
+      // Blues - Foreground
+      new ColorItem('fg_blue_sky', 'Sky Blue (FG)', '\\033[38;2;135;206;235m', '\u001b[38;2;135;206;235m', ['foreground', 'rgb']),
+      new ColorItem('fg_blue_navy', 'Navy Blue (FG)', '\\033[38;2;0;0;128m', '\u001b[38;2;0;0;128m', ['foreground', 'rgb']),
+      new ColorItem('fg_blue_royal', 'Royal Blue (FG)', '\\033[38;2;65;105;225m', '\u001b[38;2;65;105;225m', ['foreground', 'rgb']),
+      new ColorItem('fg_blue_steel', 'Steel Blue (FG)', '\\033[38;2;70;130;180m', '\u001b[38;2;70;130;180m', ['foreground', 'rgb']),
+      new ColorItem('fg_blue_powder', 'Powder Blue (FG)', '\\033[38;2;176;224;230m', '\u001b[38;2;176;224;230m', ['foreground', 'rgb']),
+      new ColorItem('fg_blue_turquoise', 'Turquoise (FG)', '\\033[38;2;64;224;208m', '\u001b[38;2;64;224;208m', ['foreground', 'rgb']),
+      new ColorItem('fg_blue_teal', 'Teal (FG)', '\\033[38;2;0;128;128m', '\u001b[38;2;0;128;128m', ['foreground', 'rgb']),
+      new ColorItem('fg_blue_mint', 'Mint (FG)', '\\033[38;2;152;255;152m', '\u001b[38;2;152;255;152m', ['foreground', 'rgb']),
+      
+      // Blues - Background
+      new ColorItem('bg_blue_sky', 'Sky Blue (BG)', '\\033[48;2;135;206;235m', '\u001b[48;2;135;206;235m', ['background', 'rgb']),
+      new ColorItem('bg_blue_navy', 'Navy Blue (BG)', '\\033[48;2;0;0;128m', '\u001b[48;2;0;0;128m', ['background', 'rgb']),
+      new ColorItem('bg_blue_royal', 'Royal Blue (BG)', '\\033[48;2;65;105;225m', '\u001b[48;2;65;105;225m', ['background', 'rgb']),
+      new ColorItem('bg_blue_steel', 'Steel Blue (BG)', '\\033[48;2;70;130;180m', '\u001b[48;2;70;130;180m', ['background', 'rgb']),
+      new ColorItem('bg_blue_powder', 'Powder Blue (BG)', '\\033[48;2;176;224;230m', '\u001b[48;2;176;224;230m', ['background', 'rgb']),
+      new ColorItem('bg_blue_turquoise', 'Turquoise (BG)', '\\033[48;2;64;224;208m', '\u001b[48;2;64;224;208m', ['background', 'rgb']),
+      new ColorItem('bg_blue_teal', 'Teal (BG)', '\\033[48;2;0;128;128m', '\u001b[48;2;0;128;128m', ['background', 'rgb']),
+      new ColorItem('bg_blue_mint', 'Mint (BG)', '\\033[48;2;152;255;152m', '\u001b[48;2;152;255;152m', ['background', 'rgb']),
+      
+      // Purples - Foreground
+      new ColorItem('fg_purple_lavender', 'Lavender (FG)', '\\033[38;2;230;230;250m', '\u001b[38;2;230;230;250m', ['foreground', 'rgb']),
+      new ColorItem('fg_purple_plum', 'Plum (FG)', '\\033[38;2;221;160;221m', '\u001b[38;2;221;160;221m', ['foreground', 'rgb']),
+      new ColorItem('fg_purple_violet', 'Violet (FG)', '\\033[38;2;238;130;238m', '\u001b[38;2;238;130;238m', ['foreground', 'rgb']),
+      new ColorItem('fg_purple_orchid', 'Orchid (FG)', '\\033[38;2;218;112;214m', '\u001b[38;2;218;112;214m', ['foreground', 'rgb']),
+      new ColorItem('fg_purple_magenta', 'Magenta (FG)', '\\033[38;2;255;0;255m', '\u001b[38;2;255;0;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_purple_indigo', 'Indigo (FG)', '\\033[38;2;75;0;130m', '\u001b[38;2;75;0;130m', ['foreground', 'rgb']),
+      
+      // Purples - Background
+      new ColorItem('bg_purple_lavender', 'Lavender (BG)', '\\033[48;2;230;230;250m', '\u001b[48;2;230;230;250m', ['background', 'rgb']),
+      new ColorItem('bg_purple_plum', 'Plum (BG)', '\\033[48;2;221;160;221m', '\u001b[48;2;221;160;221m', ['background', 'rgb']),
+      new ColorItem('bg_purple_violet', 'Violet (BG)', '\\033[48;2;238;130;238m', '\u001b[48;2;238;130;238m', ['background', 'rgb']),
+      new ColorItem('bg_purple_orchid', 'Orchid (BG)', '\\033[48;2;218;112;214m', '\u001b[48;2;218;112;214m', ['background', 'rgb']),
+      new ColorItem('bg_purple_magenta', 'Magenta (BG)', '\\033[48;2;255;0;255m', '\u001b[48;2;255;0;255m', ['background', 'rgb']),
+      new ColorItem('bg_purple_indigo', 'Indigo (BG)', '\\033[48;2;75;0;130m', '\u001b[48;2;75;0;130m', ['background', 'rgb']),
+      
+      // Pinks - Foreground
+      new ColorItem('fg_pink_light', 'Light Pink (FG)', '\\033[38;2;255;182;193m', '\u001b[38;2;255;182;193m', ['foreground', 'rgb']),
+      new ColorItem('fg_pink_hot', 'Hot Pink (FG)', '\\033[38;2;255;105;180m', '\u001b[38;2;255;105;180m', ['foreground', 'rgb']),
+      new ColorItem('fg_pink_deep', 'Deep Pink (FG)', '\\033[38;2;255;20;147m', '\u001b[38;2;255;20;147m', ['foreground', 'rgb']),
+      new ColorItem('fg_pink_coral', 'Coral Pink (FG)', '\\033[38;2;255;127;80m', '\u001b[38;2;255;127;80m', ['foreground', 'rgb']),
+      new ColorItem('fg_pink_salmon', 'Salmon Pink (FG)', '\\033[38;2;250;128;114m', '\u001b[38;2;250;128;114m', ['foreground', 'rgb']),
+      
+      // Pinks - Background
+      new ColorItem('bg_pink_light', 'Light Pink (BG)', '\\033[48;2;255;182;193m', '\u001b[48;2;255;182;193m', ['background', 'rgb']),
+      new ColorItem('bg_pink_hot', 'Hot Pink (BG)', '\\033[48;2;255;105;180m', '\u001b[48;2;255;105;180m', ['background', 'rgb']),
+      new ColorItem('bg_pink_deep', 'Deep Pink (BG)', '\\033[48;2;255;20;147m', '\u001b[48;2;255;20;147m', ['background', 'rgb']),
+      new ColorItem('bg_pink_coral', 'Coral Pink (BG)', '\\033[48;2;255;127;80m', '\u001b[48;2;255;127;80m', ['background', 'rgb']),
+      new ColorItem('bg_pink_salmon', 'Salmon Pink (BG)', '\\033[48;2;250;128;114m', '\u001b[48;2;250;128;114m', ['background', 'rgb']),
+      
+      // Greens - Foreground
+      new ColorItem('fg_green_lime', 'Lime Green (FG)', '\\033[38;2;50;205;50m', '\u001b[38;2;50;205;50m', ['foreground', 'rgb']),
+      new ColorItem('fg_green_forest', 'Forest Green (FG)', '\\033[38;2;34;139;34m', '\u001b[38;2;34;139;34m', ['foreground', 'rgb']),
+      new ColorItem('fg_green_sea', 'Sea Green (FG)', '\\033[38;2;46;139;87m', '\u001b[38;2;46;139;87m', ['foreground', 'rgb']),
+      new ColorItem('fg_green_olive', 'Olive Green (FG)', '\\033[38;2;107;142;35m', '\u001b[38;2;107;142;35m', ['foreground', 'rgb']),
+      new ColorItem('fg_green_spring', 'Spring Green (FG)', '\\033[38;2;0;255;127m', '\u001b[38;2;0;255;127m', ['foreground', 'rgb']),
+      new ColorItem('fg_green_emerald', 'Emerald Green (FG)', '\\033[38;2;80;200;120m', '\u001b[38;2;80;200;120m', ['foreground', 'rgb']),
+      
+      // Greens - Background
+      new ColorItem('bg_green_lime', 'Lime Green (BG)', '\\033[48;2;50;205;50m', '\u001b[48;2;50;205;50m', ['background', 'rgb']),
+      new ColorItem('bg_green_forest', 'Forest Green (BG)', '\\033[48;2;34;139;34m', '\u001b[48;2;34;139;34m', ['background', 'rgb']),
+      new ColorItem('bg_green_sea', 'Sea Green (BG)', '\\033[48;2;46;139;87m', '\u001b[48;2;46;139;87m', ['background', 'rgb']),
+      new ColorItem('bg_green_olive', 'Olive Green (BG)', '\\033[48;2;107;142;35m', '\u001b[48;2;107;142;35m', ['background', 'rgb']),
+      new ColorItem('bg_green_spring', 'Spring Green (BG)', '\\033[48;2;0;255;127m', '\u001b[48;2;0;255;127m', ['background', 'rgb']),
+      new ColorItem('bg_green_emerald', 'Emerald Green (BG)', '\\033[48;2;80;200;120m', '\u001b[48;2;80;200;120m', ['background', 'rgb']),
+      
+      // Yellows and Oranges - Foreground
+      new ColorItem('fg_yellow_lemon', 'Lemon Yellow (FG)', '\\033[38;2;255;250;115m', '\u001b[38;2;255;250;115m', ['foreground', 'rgb']),
+      new ColorItem('fg_yellow_gold', 'Gold (FG)', '\\033[38;2;255;215;0m', '\u001b[38;2;255;215;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_yellow_amber', 'Amber (FG)', '\\033[38;2;255;191;0m', '\u001b[38;2;255;191;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_orange_dark', 'Dark Orange (FG)', '\\033[38;2;255;140;0m', '\u001b[38;2;255;140;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_orange_burnt', 'Burnt Orange (FG)', '\\033[38;2;204;85;0m', '\u001b[38;2;204;85;0m', ['foreground', 'rgb']),
+      
+      // Yellows and Oranges - Background
+      new ColorItem('bg_yellow_lemon', 'Lemon Yellow (BG)', '\\033[48;2;255;250;115m', '\u001b[48;2;255;250;115m', ['background', 'rgb']),
+      new ColorItem('bg_yellow_gold', 'Gold (BG)', '\\033[48;2;255;215;0m', '\u001b[48;2;255;215;0m', ['background', 'rgb']),
+      new ColorItem('bg_yellow_amber', 'Amber (BG)', '\\033[48;2;255;191;0m', '\u001b[48;2;255;191;0m', ['background', 'rgb']),
+      new ColorItem('bg_orange_dark', 'Dark Orange (BG)', '\\033[48;2;255;140;0m', '\u001b[48;2;255;140;0m', ['background', 'rgb']),
+      new ColorItem('bg_orange_burnt', 'Burnt Orange (BG)', '\\033[48;2;204;85;0m', '\u001b[48;2;204;85;0m', ['background', 'rgb']),
+      
+      // Reds - Foreground
+      new ColorItem('fg_red_crimson', 'Crimson (FG)', '\\033[38;2;220;20;60m', '\u001b[38;2;220;20;60m', ['foreground', 'rgb']),
+      new ColorItem('fg_red_ruby', 'Ruby Red (FG)', '\\033[38;2;155;17;30m', '\u001b[38;2;155;17;30m', ['foreground', 'rgb']),
+      new ColorItem('fg_red_cherry', 'Cherry Red (FG)', '\\033[38;2;205;41;73m', '\u001b[38;2;205;41;73m', ['foreground', 'rgb']),
+      new ColorItem('fg_red_wine', 'Wine Red (FG)', '\\033[38;2;114;47;55m', '\u001b[38;2;114;47;55m', ['foreground', 'rgb']),
+      new ColorItem('fg_red_maroon', 'Maroon (FG)', '\\033[38;2;128;0;0m', '\u001b[38;2;128;0;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_red_scarlet', 'Scarlet (FG)', '\\033[38;2;255;36;0m', '\u001b[38;2;255;36;0m', ['foreground', 'rgb']),
+      
+      // Reds - Background
+      new ColorItem('bg_red_crimson', 'Crimson (BG)', '\\033[48;2;220;20;60m', '\u001b[48;2;220;20;60m', ['background', 'rgb']),
+      new ColorItem('bg_red_ruby', 'Ruby Red (BG)', '\\033[48;2;155;17;30m', '\u001b[48;2;155;17;30m', ['background', 'rgb']),
+      new ColorItem('bg_red_cherry', 'Cherry Red (BG)', '\\033[48;2;205;41;73m', '\u001b[48;2;205;41;73m', ['background', 'rgb']),
+      new ColorItem('bg_red_wine', 'Wine Red (BG)', '\\033[48;2;114;47;55m', '\u001b[48;2;114;47;55m', ['background', 'rgb']),
+      new ColorItem('bg_red_maroon', 'Maroon (BG)', '\\033[48;2;128;0;0m', '\u001b[48;2;128;0;0m', ['background', 'rgb']),
+      new ColorItem('bg_red_scarlet', 'Scarlet (BG)', '\\033[48;2;255;36;0m', '\u001b[48;2;255;36;0m', ['background', 'rgb']),
+      
+      // Grays - Foreground
+      new ColorItem('fg_gray_silver', 'Silver (FG)', '\\033[38;2;192;192;192m', '\u001b[38;2;192;192;192m', ['foreground', 'rgb']),
+      new ColorItem('fg_gray_slate', 'Slate Gray (FG)', '\\033[38;2;112;128;144m', '\u001b[38;2;112;128;144m', ['foreground', 'rgb']),
+      new ColorItem('fg_gray_charcoal', 'Charcoal (FG)', '\\033[38;2;54;69;79m', '\u001b[38;2;54;69;79m', ['foreground', 'rgb']),
+      new ColorItem('fg_gray_light', 'Light Gray (FG)', '\\033[38;2;211;211;211m', '\u001b[38;2;211;211;211m', ['foreground', 'rgb']),
+      new ColorItem('fg_gray_dark', 'Dark Gray (FG)', '\\033[38;2;105;105;105m', '\u001b[38;2;105;105;105m', ['foreground', 'rgb']),
+      
+      // Grays - Background
+      new ColorItem('bg_gray_silver', 'Silver (BG)', '\\033[48;2;192;192;192m', '\u001b[48;2;192;192;192m', ['background', 'rgb']),
+      new ColorItem('bg_gray_slate', 'Slate Gray (BG)', '\\033[48;2;112;128;144m', '\u001b[48;2;112;128;144m', ['background', 'rgb']),
+      new ColorItem('bg_gray_charcoal', 'Charcoal (BG)', '\\033[48;2;54;69;79m', '\u001b[48;2;54;69;79m', ['background', 'rgb']),
+      new ColorItem('bg_gray_light', 'Light Gray (BG)', '\\033[48;2;211;211;211m', '\u001b[48;2;211;211;211m', ['background', 'rgb']),
+      new ColorItem('bg_gray_dark', 'Dark Gray (BG)', '\\033[48;2;105;105;105m', '\u001b[48;2;105;105;105m', ['background', 'rgb']),
+      
+      // Special Tones - Foreground
+      new ColorItem('fg_metallic_gold', 'Metallic Gold (FG)', '\\033[38;2;212;175;55m', '\u001b[38;2;212;175;55m', ['foreground', 'rgb']),
+      new ColorItem('fg_metallic_silver', 'Metallic Silver (FG)', '\\033[38;2;192;192;192m', '\u001b[38;2;192;192;192m', ['foreground', 'rgb']),
+      new ColorItem('fg_metallic_bronze', 'Bronze (FG)', '\\033[38;2;205;127;50m', '\u001b[38;2;205;127;50m', ['foreground', 'rgb']),
+      new ColorItem('fg_metallic_copper', 'Copper (FG)', '\\033[38;2;184;115;51m', '\u001b[38;2;184;115;51m', ['foreground', 'rgb']),
+      
+      // Special Tones - Background
+      new ColorItem('bg_metallic_gold', 'Metallic Gold (BG)', '\\033[48;2;212;175;55m', '\u001b[48;2;212;175;55m', ['background', 'rgb']),
+      new ColorItem('bg_metallic_silver', 'Metallic Silver (BG)', '\\033[48;2;192;192;192m', '\u001b[48;2;192;192;192m', ['background', 'rgb']),
+      new ColorItem('bg_metallic_bronze', 'Bronze (BG)', '\\033[48;2;205;127;50m', '\u001b[48;2;205;127;50m', ['background', 'rgb']),
+      new ColorItem('bg_metallic_copper', 'Copper (BG)', '\\033[48;2;184;115;51m', '\u001b[48;2;184;115;51m', ['background', 'rgb']),
+      
+      // Jewel Tones - Foreground
+      new ColorItem('fg_jewel_sapphire', 'Sapphire (FG)', '\\033[38;2;15;82;186m', '\u001b[38;2;15;82;186m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_emerald', 'Emerald (FG)', '\\033[38;2;80;200;120m', '\u001b[38;2;80;200;120m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_ruby', 'Ruby (FG)', '\\033[38;2;224;17;95m', '\u001b[38;2;224;17;95m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_amethyst', 'Amethyst (FG)', '\\033[38;2;153;102;204m', '\u001b[38;2;153;102;204m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_topaz', 'Topaz (FG)', '\\033[38;2;255;200;124m', '\u001b[38;2;255;200;124m', ['foreground', 'rgb']),
+      
+      // Jewel Tones - Background
+      new ColorItem('bg_jewel_sapphire', 'Sapphire (BG)', '\\033[48;2;15;82;186m', '\u001b[48;2;15;82;186m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_emerald', 'Emerald (BG)', '\\033[48;2;80;200;120m', '\u001b[48;2;80;200;120m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_ruby', 'Ruby (BG)', '\\033[48;2;224;17;95m', '\u001b[48;2;224;17;95m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_amethyst', 'Amethyst (BG)', '\\033[48;2;153;102;204m', '\u001b[48;2;153;102;204m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_topaz', 'Topaz (BG)', '\\033[48;2;255;200;124m', '\u001b[48;2;255;200;124m', ['background', 'rgb']),
+
+      // Pastel Foreground - Additional Set
+      new ColorItem('fg_pastel_teal', 'Pastel Teal (FG)', '\\033[38;2;142;229;218m', '\u001b[38;2;142;229;218m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_lime', 'Pastel Lime (FG)', '\\033[38;2;185;255;174m', '\u001b[38;2;185;255;174m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_salmon', 'Pastel Salmon (FG)', '\\033[38;2;255;170;170m', '\u001b[38;2;255;170;170m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_mauve', 'Pastel Mauve (FG)', '\\033[38;2;220;180;200m', '\u001b[38;2;220;180;200m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_periwinkle', 'Pastel Periwinkle (FG)', '\\033[38;2;204;204;255m', '\u001b[38;2;204;204;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_apricot', 'Pastel Apricot (FG)', '\\033[38;2;255;215;160m', '\u001b[38;2;255;215;160m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_sage', 'Pastel Sage (FG)', '\\033[38;2;200;226;207m', '\u001b[38;2;200;226;207m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_rose', 'Pastel Rose (FG)', '\\033[38;2;255;170;180m', '\u001b[38;2;255;170;180m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_aqua', 'Pastel Aqua (FG)', '\\033[38;2;172;245;240m', '\u001b[38;2;172;245;240m', ['foreground', 'rgb']),
+      new ColorItem('fg_pastel_buttercream', 'Pastel Buttercream (FG)', '\\033[38;2;255;245;200m', '\u001b[38;2;255;245;200m', ['foreground', 'rgb']),
+
+      // Pastel Background - Additional Set
+      new ColorItem('bg_pastel_teal', 'Pastel Teal (BG)', '\\033[48;2;142;229;218m', '\u001b[48;2;142;229;218m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_lime', 'Pastel Lime (BG)', '\\033[48;2;185;255;174m', '\u001b[48;2;185;255;174m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_salmon', 'Pastel Salmon (BG)', '\\033[48;2;255;170;170m', '\u001b[48;2;255;170;170m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_mauve', 'Pastel Mauve (BG)', '\\033[48;2;220;180;200m', '\u001b[48;2;220;180;200m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_periwinkle', 'Pastel Periwinkle (BG)', '\\033[48;2;204;204;255m', '\u001b[48;2;204;204;255m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_apricot', 'Pastel Apricot (BG)', '\\033[48;2;255;215;160m', '\u001b[48;2;255;215;160m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_sage', 'Pastel Sage (BG)', '\\033[48;2;200;226;207m', '\u001b[48;2;200;226;207m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_rose', 'Pastel Rose (BG)', '\\033[48;2;255;170;180m', '\u001b[48;2;255;170;180m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_aqua', 'Pastel Aqua (BG)', '\\033[48;2;172;245;240m', '\u001b[48;2;172;245;240m', ['background', 'rgb']),
+      new ColorItem('bg_pastel_buttercream', 'Pastel Buttercream (BG)', '\\033[48;2;255;245;200m', '\u001b[48;2;255;245;200m', ['background', 'rgb']),
+
+      // Deep Tones - Foreground
+      new ColorItem('fg_deep_burgundy', 'Deep Burgundy (FG)', '\\033[38;2;128;0;32m', '\u001b[38;2;128;0;32m', ['foreground', 'rgb']),
+      new ColorItem('fg_deep_plum', 'Deep Plum (FG)', '\\033[38;2;102;0;102m', '\u001b[38;2;102;0;102m', ['foreground', 'rgb']),
+      new ColorItem('fg_deep_navy', 'Deep Navy (FG)', '\\033[38;2;0;0;102m', '\u001b[38;2;0;0;102m', ['foreground', 'rgb']),
+      new ColorItem('fg_deep_forest', 'Deep Forest (FG)', '\\033[38;2;0;51;0m', '\u001b[38;2;0;51;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_deep_chocolate', 'Deep Chocolate (FG)', '\\033[38;2;77;25;0m', '\u001b[38;2;77;25;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_deep_charcoal', 'Deep Charcoal (FG)', '\\033[38;2;34;34;34m', '\u001b[38;2;34;34;34m', ['foreground', 'rgb']),
+      new ColorItem('fg_deep_teal', 'Deep Teal (FG)', '\\033[38;2;0;77;77m', '\u001b[38;2;0;77;77m', ['foreground', 'rgb']),
+      new ColorItem('fg_deep_mustard', 'Deep Mustard (FG)', '\\033[38;2;153;102;0m', '\u001b[38;2;153;102;0m', ['foreground', 'rgb']),
+
+      // Deep Tones - Background
+      new ColorItem('bg_deep_burgundy', 'Deep Burgundy (BG)', '\\033[48;2;128;0;32m', '\u001b[48;2;128;0;32m', ['background', 'rgb']),
+      new ColorItem('bg_deep_plum', 'Deep Plum (BG)', '\\033[48;2;102;0;102m', '\u001b[48;2;102;0;102m', ['background', 'rgb']),
+      new ColorItem('bg_deep_navy', 'Deep Navy (BG)', '\\033[48;2;0;0;102m', '\u001b[48;2;0;0;102m', ['background', 'rgb']),
+      new ColorItem('bg_deep_forest', 'Deep Forest (BG)', '\\033[48;2;0;51;0m', '\u001b[48;2;0;51;0m', ['background', 'rgb']),
+      new ColorItem('bg_deep_chocolate', 'Deep Chocolate (BG)', '\\033[48;2;77;25;0m', '\u001b[48;2;77;25;0m', ['background', 'rgb']),
+      new ColorItem('bg_deep_charcoal', 'Deep Charcoal (BG)', '\\033[48;2;34;34;34m', '\u001b[48;2;34;34;34m', ['background', 'rgb']),
+      new ColorItem('bg_deep_teal', 'Deep Teal (BG)', '\\033[48;2;0;77;77m', '\u001b[48;2;0;77;77m', ['background', 'rgb']),
+      new ColorItem('bg_deep_mustard', 'Deep Mustard (BG)', '\\033[48;2;153;102;0m', '\u001b[48;2;153;102;0m', ['background', 'rgb']),
+
+      // More Jewel Tones - Foreground
+      new ColorItem('fg_jewel_peridot', 'Peridot (FG)', '\\033[38;2;154;205;50m', '\u001b[38;2;154;205;50m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_garnet', 'Garnet (FG)', '\\033[38;2;154;0;54m', '\u001b[38;2;154;0;54m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_aquamarine', 'Aquamarine (FG)', '\\033[38;2;127;255;212m', '\u001b[38;2;127;255;212m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_citrine', 'Citrine (FG)', '\\033[38;2;228;208;10m', '\u001b[38;2;228;208;10m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_tanzanite', 'Tanzanite (FG)', '\\033[38;2;51;33;141m', '\u001b[38;2;51;33;141m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_opal', 'Opal (FG)', '\\033[38;2;214;240;240m', '\u001b[38;2;214;240;240m', ['foreground', 'rgb']),
+      new ColorItem('fg_jewel_onyx', 'Onyx (FG)', '\\033[38;2;53;56;57m', '\u001b[38;2;53;56;57m', ['foreground', 'rgb']),
+
+      // More Jewel Tones - Background
+      new ColorItem('bg_jewel_peridot', 'Peridot (BG)', '\\033[48;2;154;205;50m', '\u001b[48;2;154;205;50m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_garnet', 'Garnet (BG)', '\\033[48;2;154;0;54m', '\u001b[48;2;154;0;54m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_aquamarine', 'Aquamarine (BG)', '\\033[48;2;127;255;212m', '\u001b[48;2;127;255;212m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_citrine', 'Citrine (BG)', '\\033[48;2;228;208;10m', '\u001b[48;2;228;208;10m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_tanzanite', 'Tanzanite (BG)', '\\033[48;2;51;33;141m', '\u001b[48;2;51;33;141m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_opal', 'Opal (BG)', '\\033[48;2;214;240;240m', '\u001b[48;2;214;240;240m', ['background', 'rgb']),
+      new ColorItem('bg_jewel_onyx', 'Onyx (BG)', '\\033[48;2;53;56;57m', '\u001b[48;2;53;56;57m', ['background', 'rgb']),
+
+      // Autumn Colors - Foreground
+      new ColorItem('fg_autumn_burnt_orange', 'Burnt Orange (FG)', '\\033[38;2;204;85;0m', '\u001b[38;2;204;85;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_autumn_rust', 'Rust (FG)', '\\033[38;2;183;65;14m', '\u001b[38;2;183;65;14m', ['foreground', 'rgb']),
+      new ColorItem('fg_autumn_mustard', 'Mustard (FG)', '\\033[38;2;206;184;65m', '\u001b[38;2;206;184;65m', ['foreground', 'rgb']),
+      new ColorItem('fg_autumn_brick', 'Brick (FG)', '\\033[38;2;156;70;63m', '\u001b[38;2;156;70;63m', ['foreground', 'rgb']),
+      new ColorItem('fg_autumn_brown', 'Autumn Brown (FG)', '\\033[38;2;102;51;0m', '\u001b[38;2;102;51;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_autumn_gold', 'Autumn Gold (FG)', '\\033[38;2;204;153;0m', '\u001b[38;2;204;153;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_autumn_chestnut', 'Chestnut (FG)', '\\033[38;2;139;69;19m', '\u001b[38;2;139;69;19m', ['foreground', 'rgb']),
+      new ColorItem('fg_autumn_maroon', 'Autumn Maroon (FG)', '\\033[38;2;128;0;0m', '\u001b[38;2;128;0;0m', ['foreground', 'rgb']),
+
+      // Autumn Colors - Background
+      new ColorItem('bg_autumn_burnt_orange', 'Burnt Orange (BG)', '\\033[48;2;204;85;0m', '\u001b[48;2;204;85;0m', ['background', 'rgb']),
+      new ColorItem('bg_autumn_rust', 'Rust (BG)', '\\033[48;2;183;65;14m', '\u001b[48;2;183;65;14m', ['background', 'rgb']),
+      new ColorItem('bg_autumn_mustard', 'Mustard (BG)', '\\033[48;2;206;184;65m', '\u001b[48;2;206;184;65m', ['background', 'rgb']),
+      new ColorItem('bg_autumn_brick', 'Brick (BG)', '\\033[48;2;156;70;63m', '\u001b[48;2;156;70;63m', ['background', 'rgb']),
+      new ColorItem('bg_autumn_brown', 'Autumn Brown (BG)', '\\033[48;2;102;51;0m', '\u001b[48;2;102;51;0m', ['background', 'rgb']),
+      new ColorItem('bg_autumn_gold', 'Autumn Gold (BG)', '\\033[48;2;204;153;0m', '\u001b[48;2;204;153;0m', ['background', 'rgb']),
+      new ColorItem('bg_autumn_chestnut', 'Chestnut (BG)', '\\033[48;2;139;69;19m', '\u001b[48;2;139;69;19m', ['background', 'rgb']),
+      new ColorItem('bg_autumn_maroon', 'Autumn Maroon (BG)', '\\033[48;2;128;0;0m', '\u001b[48;2;128;0;0m', ['background', 'rgb']),
+
+      // Winter Colors - Foreground
+      new ColorItem('fg_winter_ice_blue', 'Ice Blue (FG)', '\\033[38;2;210;234;252m', '\u001b[38;2;210;234;252m', ['foreground', 'rgb']),
+      new ColorItem('fg_winter_silver', 'Winter Silver (FG)', '\\033[38;2;211;216;219m', '\u001b[38;2;211;216;219m', ['foreground', 'rgb']),
+      new ColorItem('fg_winter_pine', 'Pine (FG)', '\\033[38;2;19;79;43m', '\u001b[38;2;19;79;43m', ['foreground', 'rgb']),
+      new ColorItem('fg_winter_cranberry', 'Cranberry (FG)', '\\033[38;2;179;1;30m', '\u001b[38;2;179;1;30m', ['foreground', 'rgb']),
+      new ColorItem('fg_winter_snow', 'Snow (FG)', '\\033[38;2;255;250;250m', '\u001b[38;2;255;250;250m', ['foreground', 'rgb']),
+      new ColorItem('fg_winter_slate', 'Winter Slate (FG)', '\\033[38;2;105;112;120m', '\u001b[38;2;105;112;120m', ['foreground', 'rgb']),
+      new ColorItem('fg_winter_berry', 'Winter Berry (FG)', '\\033[38;2;152;27;62m', '\u001b[38;2;152;27;62m', ['foreground', 'rgb']),
+      new ColorItem('fg_winter_evergreen', 'Evergreen (FG)', '\\033[38;2;5;71;42m', '\u001b[38;2;5;71;42m', ['foreground', 'rgb']),
+
+      // Winter Colors - Background
+      new ColorItem('bg_winter_ice_blue', 'Ice Blue (BG)', '\\033[48;2;210;234;252m', '\u001b[48;2;210;234;252m', ['background', 'rgb']),
+      new ColorItem('bg_winter_silver', 'Winter Silver (BG)', '\\033[48;2;211;216;219m', '\u001b[48;2;211;216;219m', ['background', 'rgb']),
+      new ColorItem('bg_winter_pine', 'Pine (BG)', '\\033[48;2;19;79;43m', '\u001b[48;2;19;79;43m', ['background', 'rgb']),
+      new ColorItem('bg_winter_cranberry', 'Cranberry (BG)', '\\033[48;2;179;1;30m', '\u001b[48;2;179;1;30m', ['background', 'rgb']),
+      new ColorItem('bg_winter_snow', 'Snow (BG)', '\\033[48;2;255;250;250m', '\u001b[48;2;255;250;250m', ['background', 'rgb']),
+      new ColorItem('bg_winter_slate', 'Winter Slate (BG)', '\\033[48;2;105;112;120m', '\u001b[48;2;105;112;120m', ['background', 'rgb']),
+      new ColorItem('bg_winter_berry', 'Winter Berry (BG)', '\\033[48;2;152;27;62m', '\u001b[48;2;152;27;62m', ['background', 'rgb']),
+      new ColorItem('bg_winter_evergreen', 'Evergreen (BG)', '\\033[48;2;5;71;42m', '\u001b[48;2;5;71;42m', ['background', 'rgb']),
+
+      // Spring Colors - Foreground
+      new ColorItem('fg_spring_blossom', 'Blossom Pink (FG)', '\\033[38;2;255;193;204m', '\u001b[38;2;255;193;204m', ['foreground', 'rgb']),
+      new ColorItem('fg_spring_meadow', 'Meadow Green (FG)', '\\033[38;2;124;204;87m', '\u001b[38;2;124;204;87m', ['foreground', 'rgb']),
+      new ColorItem('fg_spring_buttercup', 'Buttercup (FG)', '\\033[38;2;255;235;59m', '\u001b[38;2;255;235;59m', ['foreground', 'rgb']),
+      new ColorItem('fg_spring_lilac', 'Spring Lilac (FG)', '\\033[38;2;204;153;255m', '\u001b[38;2;204;153;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_spring_sky', 'Spring Sky (FG)', '\\033[38;2;102;204;255m', '\u001b[38;2;102;204;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_spring_peach', 'Spring Peach (FG)', '\\033[38;2;255;220;177m', '\u001b[38;2;255;220;177m', ['foreground', 'rgb']),
+      new ColorItem('fg_spring_mint', 'Spring Mint (FG)', '\\033[38;2;170;240;209m', '\u001b[38;2;170;240;209m', ['foreground', 'rgb']),
+      new ColorItem('fg_spring_periwinkle', 'Spring Periwinkle (FG)', '\\033[38;2;180;180;240m', '\u001b[38;2;180;180;240m', ['foreground', 'rgb']),
+
+      // Spring Colors - Background
+      new ColorItem('bg_spring_blossom', 'Blossom Pink (BG)', '\\033[48;2;255;193;204m', '\u001b[48;2;255;193;204m', ['background', 'rgb']),
+      new ColorItem('bg_spring_meadow', 'Meadow Green (BG)', '\\033[48;2;124;204;87m', '\u001b[48;2;124;204;87m', ['background', 'rgb']),
+      new ColorItem('bg_spring_buttercup', 'Buttercup (BG)', '\\033[48;2;255;235;59m', '\u001b[48;2;255;235;59m', ['background', 'rgb']),
+      new ColorItem('bg_spring_lilac', 'Spring Lilac (BG)', '\\033[48;2;204;153;255m', '\u001b[48;2;204;153;255m', ['background', 'rgb']),
+      new ColorItem('bg_spring_sky', 'Spring Sky (BG)', '\\033[48;2;102;204;255m', '\u001b[48;2;102;204;255m', ['background', 'rgb']),
+      new ColorItem('bg_spring_peach', 'Spring Peach (BG)', '\\033[48;2;255;220;177m', '\u001b[48;2;255;220;177m', ['background', 'rgb']),
+      new ColorItem('bg_spring_mint', 'Spring Mint (BG)', '\\033[48;2;170;240;209m', '\u001b[48;2;170;240;209m', ['background', 'rgb']),
+      new ColorItem('bg_spring_periwinkle', 'Spring Periwinkle (BG)', '\\033[48;2;180;180;240m', '\u001b[48;2;180;180;240m', ['background', 'rgb']),
+
+      // Summer Colors - Foreground
+      new ColorItem('fg_summer_watermelon', 'Watermelon (FG)', '\\033[38;2;251;70;105m', '\u001b[38;2;251;70;105m', ['foreground', 'rgb']),
+      new ColorItem('fg_summer_coral', 'Summer Coral (FG)', '\\033[38;2;255;127;80m', '\u001b[38;2;255;127;80m', ['foreground', 'rgb']),
+      new ColorItem('fg_summer_turquoise', 'Turquoise (FG)', '\\033[38;2;48;213;200m', '\u001b[38;2;48;213;200m', ['foreground', 'rgb']),
+      new ColorItem('fg_summer_lemon', 'Lemon Yellow (FG)', '\\033[38;2;255;247;0m', '\u001b[38;2;255;247;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_summer_lime', 'Summer Lime (FG)', '\\033[38;2;191;255;0m', '\u001b[38;2;191;255;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_summer_orange', 'Summer Orange (FG)', '\\033[38;2;255;159;0m', '\u001b[38;2;255;159;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_summer_ocean', 'Ocean Blue (FG)', '\\033[38;2;0;119;182m', '\u001b[38;2;0;119;182m', ['foreground', 'rgb']),
+      new ColorItem('fg_summer_raspberry', 'Raspberry (FG)', '\\033[38;2;227;11;93m', '\u001b[38;2;227;11;93m', ['foreground', 'rgb']),
+
+      // Summer Colors - Background
+      new ColorItem('bg_summer_watermelon', 'Watermelon (BG)', '\\033[48;2;251;70;105m', '\u001b[48;2;251;70;105m', ['background', 'rgb']),
+      new ColorItem('bg_summer_coral', 'Summer Coral (BG)', '\\033[48;2;255;127;80m', '\u001b[48;2;255;127;80m', ['background', 'rgb']),
+      new ColorItem('bg_summer_turquoise', 'Turquoise (BG)', '\\033[48;2;48;213;200m', '\u001b[48;2;48;213;200m', ['background', 'rgb']),
+      new ColorItem('bg_summer_lemon', 'Lemon Yellow (BG)', '\\033[48;2;255;247;0m', '\u001b[48;2;255;247;0m', ['background', 'rgb']),
+      new ColorItem('bg_summer_lime', 'Summer Lime (BG)', '\\033[48;2;191;255;0m', '\u001b[48;2;191;255;0m', ['background', 'rgb']),
+      new ColorItem('bg_summer_orange', 'Summer Orange (BG)', '\\033[48;2;255;159;0m', '\u001b[48;2;255;159;0m', ['background', 'rgb']),
+      new ColorItem('bg_summer_ocean', 'Ocean Blue (BG)', '\\033[48;2;0;119;182m', '\u001b[48;2;0;119;182m', ['background', 'rgb']),
+      new ColorItem('bg_summer_raspberry', 'Raspberry (BG)', '\\033[48;2;227;11;93m', '\u001b[48;2;227;11;93m', ['background', 'rgb']),
+
+      // Food Inspired Colors - Foreground
+      new ColorItem('fg_food_avocado', 'Avocado (FG)', '\\033[38;2;86;130;3m', '\u001b[38;2;86;130;3m', ['foreground', 'rgb']),
+      new ColorItem('fg_food_pomegranate', 'Pomegranate (FG)', '\\033[38;2;192;57;43m', '\u001b[38;2;192;57;43m', ['foreground', 'rgb']),
+      new ColorItem('fg_food_blueberry', 'Blueberry (FG)', '\\033[38;2;52;73;94m', '\u001b[38;2;52;73;94m', ['foreground', 'rgb']),
+      new ColorItem('fg_food_caramel', 'Caramel (FG)', '\\033[38;2;184;119;56m', '\u001b[38;2;184;119;56m', ['foreground', 'rgb']),
+      new ColorItem('fg_food_chocolate', 'Chocolate (FG)', '\\033[38;2;84;51;33m', '\u001b[38;2;84;51;33m', ['foreground', 'rgb']),
+      new ColorItem('fg_food_cinnamon', 'Cinnamon (FG)', '\\033[38;2;141;63;29m', '\u001b[38;2;141;63;29m', ['foreground', 'rgb']),
+      new ColorItem('fg_food_strawberry', 'Strawberry (FG)', '\\033[38;2;252;90;141m', '\u001b[38;2;252;90;141m', ['foreground', 'rgb']),
+      new ColorItem('fg_food_pistachio', 'Pistachio (FG)', '\\033[38;2;147;197;114m', '\u001b[38;2;147;197;114m', ['foreground', 'rgb']),
+
+      // Food Inspired Colors - Background
+      new ColorItem('bg_food_avocado', 'Avocado (BG)', '\\033[48;2;86;130;3m', '\u001b[48;2;86;130;3m', ['background', 'rgb']),
+      new ColorItem('bg_food_pomegranate', 'Pomegranate (BG)', '\\033[48;2;192;57;43m', '\u001b[48;2;192;57;43m', ['background', 'rgb']),
+      new ColorItem('bg_food_blueberry', 'Blueberry (BG)', '\\033[48;2;52;73;94m', '\u001b[48;2;52;73;94m', ['background', 'rgb']),
+      new ColorItem('bg_food_caramel', 'Caramel (BG)', '\\033[48;2;184;119;56m', '\u001b[48;2;184;119;56m', ['background', 'rgb']),
+      new ColorItem('bg_food_chocolate', 'Chocolate (BG)', '\\033[48;2;84;51;33m', '\u001b[48;2;84;51;33m', ['background', 'rgb']),
+      new ColorItem('bg_food_cinnamon', 'Cinnamon (BG)', '\\033[48;2;141;63;29m', '\u001b[48;2;141;63;29m', ['background', 'rgb']),
+      new ColorItem('bg_food_strawberry', 'Strawberry (BG)', '\\033[48;2;252;90;141m', '\u001b[48;2;252;90;141m', ['background', 'rgb']),
+      new ColorItem('bg_food_pistachio', 'Pistachio (BG)', '\\033[48;2;147;197;114m', '\u001b[48;2;147;197;114m', ['background', 'rgb']),
+
+      // Ocean Colors - Foreground
+      new ColorItem('fg_ocean_deep', 'Deep Ocean (FG)', '\\033[38;2;5;56;107m', '\u001b[38;2;5;56;107m', ['foreground', 'rgb']),
+      new ColorItem('fg_ocean_aqua', 'Aqua (FG)', '\\033[38;2;0;255;255m', '\u001b[38;2;0;255;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_ocean_seafoam', 'Seafoam (FG)', '\\033[38;2;159;226;191m', '\u001b[38;2;159;226;191m', ['foreground', 'rgb']),
+      new ColorItem('fg_ocean_coral_reef', 'Coral Reef (FG)', '\\033[38;2;255;142;107m', '\u001b[38;2;255;142;107m', ['foreground', 'rgb']),
+      new ColorItem('fg_ocean_marine', 'Marine Blue (FG)', '\\033[38;2;0;105;148m', '\u001b[38;2;0;105;148m', ['foreground', 'rgb']),
+      new ColorItem('fg_ocean_teal', 'Ocean Teal (FG)', '\\033[38;2;0;128;128m', '\u001b[38;2;0;128;128m', ['foreground', 'rgb']),
+      new ColorItem('fg_ocean_azure', 'Azure (FG)', '\\033[38;2;0;127;255m', '\u001b[38;2;0;127;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_ocean_cyan', 'Cyan (FG)', '\\033[38;2;0;183;235m', '\u001b[38;2;0;183;235m', ['foreground', 'rgb']),
+
+      // Ocean Colors - Background
+      new ColorItem('bg_ocean_deep', 'Deep Ocean (BG)', '\\033[48;2;5;56;107m', '\u001b[48;2;5;56;107m', ['background', 'rgb']),
+      new ColorItem('bg_ocean_aqua', 'Aqua (BG)', '\\033[48;2;0;255;255m', '\u001b[48;2;0;255;255m', ['background', 'rgb']),
+      new ColorItem('bg_ocean_seafoam', 'Seafoam (BG)', '\\033[48;2;159;226;191m', '\u001b[48;2;159;226;191m', ['background', 'rgb']),
+      new ColorItem('bg_ocean_coral_reef', 'Coral Reef (BG)', '\\033[48;2;255;142;107m', '\u001b[48;2;255;142;107m', ['background', 'rgb']),
+      new ColorItem('bg_ocean_marine', 'Marine Blue (BG)', '\\033[48;2;0;105;148m', '\u001b[48;2;0;105;148m', ['background', 'rgb']),
+      new ColorItem('bg_ocean_teal', 'Ocean Teal (BG)', '\\033[48;2;0;128;128m', '\u001b[48;2;0;128;128m', ['background', 'rgb']),
+      new ColorItem('bg_ocean_azure', 'Azure (BG)', '\\033[48;2;0;127;255m', '\u001b[48;2;0;127;255m', ['background', 'rgb']),
+      new ColorItem('bg_ocean_cyan', 'Cyan (BG)', '\\033[48;2;0;183;235m', '\u001b[48;2;0;183;235m', ['background', 'rgb']),
+
+      // Space Colors - Foreground
+      new ColorItem('fg_space_nebula', 'Nebula Purple (FG)', '\\033[38;2;131;58;180m', '\u001b[38;2;131;58;180m', ['foreground', 'rgb']),
+      new ColorItem('fg_space_galaxy', 'Galaxy Blue (FG)', '\\033[38;2;23;42;136m', '\u001b[38;2;23;42;136m', ['foreground', 'rgb']),
+      new ColorItem('fg_space_stardust', 'Stardust Pink (FG)', '\\033[38;2;255;131;250m', '\u001b[38;2;255;131;250m', ['foreground', 'rgb']),
+      new ColorItem('fg_space_cosmic', 'Cosmic Purple (FG)', '\\033[38;2;101;41;138m', '\u001b[38;2;101;41;138m', ['foreground', 'rgb']),
+      new ColorItem('fg_space_meteor', 'Meteor Brown (FG)', '\\033[38;2;119;84;69m', '\u001b[38;2;119;84;69m', ['foreground', 'rgb']),
+      new ColorItem('fg_space_midnight', 'Midnight Blue (FG)', '\\033[38;2;25;25;112m', '\u001b[38;2;25;25;112m', ['foreground', 'rgb']),
+      new ColorItem('fg_space_celestial', 'Celestial Blue (FG)', '\\033[38;2;64;176;225m', '\u001b[38;2;64;176;225m', ['foreground', 'rgb']),
+      new ColorItem('fg_space_void', 'Void Black (FG)', '\\033[38;2;16;15;33m', '\u001b[38;2;16;15;33m', ['foreground', 'rgb']),
+
+      // Space Colors - Background
+      new ColorItem('bg_space_nebula', 'Nebula Purple (BG)', '\\033[48;2;131;58;180m', '\u001b[48;2;131;58;180m', ['background', 'rgb']),
+      new ColorItem('bg_space_galaxy', 'Galaxy Blue (BG)', '\\033[48;2;23;42;136m', '\u001b[48;2;23;42;136m', ['background', 'rgb']),
+      new ColorItem('bg_space_stardust', 'Stardust Pink (BG)', '\\033[48;2;255;131;250m', '\u001b[48;2;255;131;250m', ['background', 'rgb']),
+      new ColorItem('bg_space_cosmic', 'Cosmic Purple (BG)', '\\033[48;2;101;41;138m', '\u001b[48;2;101;41;138m', ['background', 'rgb']),
+      new ColorItem('bg_space_meteor', 'Meteor Brown (BG)', '\\033[48;2;119;84;69m', '\u001b[48;2;119;84;69m', ['background', 'rgb']),
+      new ColorItem('bg_space_midnight', 'Midnight Blue (BG)', '\\033[48;2;25;25;112m', '\u001b[48;2;25;25;112m', ['background', 'rgb']),
+      new ColorItem('bg_space_celestial', 'Celestial Blue (BG)', '\\033[48;2;64;176;225m', '\u001b[48;2;64;176;225m', ['background', 'rgb']),
+      new ColorItem('bg_space_void', 'Void Black (BG)', '\\033[48;2;16;15;33m', '\u001b[48;2;16;15;33m', ['background', 'rgb']),
+
+      // Retro Colors - Foreground
+      new ColorItem('fg_retro_mustard', 'Retro Mustard (FG)', '\\033[38;2;209;178;74m', '\u001b[38;2;209;178;74m', ['foreground', 'rgb']),
+      new ColorItem('fg_retro_avocado', 'Retro Avocado (FG)', '\\033[38;2;113;143;90m', '\u001b[38;2;113;143;90m', ['foreground', 'rgb']),
+      new ColorItem('fg_retro_burnt_orange', 'Retro Burnt Orange (FG)', '\\033[38;2;198;117;76m', '\u001b[38;2;198;117;76m', ['foreground', 'rgb']),
+      new ColorItem('fg_retro_rust', 'Retro Rust (FG)', '\\033[38;2;179;98;66m', '\u001b[38;2;179;98;66m', ['foreground', 'rgb']),
+      new ColorItem('fg_retro_teal', 'Retro Teal (FG)', '\\033[38;2;53;128;139m', '\u001b[38;2;53;128;139m', ['foreground', 'rgb']),
+      new ColorItem('fg_retro_harvest_gold', 'Harvest Gold (FG)', '\\033[38;2;219;166;46m', '\u001b[38;2;219;166;46m', ['foreground', 'rgb']),
+      new ColorItem('fg_retro_brown', 'Retro Brown (FG)', '\\033[38;2;120;87;64m', '\u001b[38;2;120;87;64m', ['foreground', 'rgb']),
+      new ColorItem('fg_retro_olive', 'Retro Olive (FG)', '\\033[38;2;95;101;50m', '\u001b[38;2;95;101;50m', ['foreground', 'rgb']),
+
+      // Retro Colors - Background
+      new ColorItem('bg_retro_mustard', 'Retro Mustard (BG)', '\\033[48;2;209;178;74m', '\u001b[48;2;209;178;74m', ['background', 'rgb']),
+      new ColorItem('bg_retro_avocado', 'Retro Avocado (BG)', '\\033[48;2;113;143;90m', '\u001b[48;2;113;143;90m', ['background', 'rgb']),
+      new ColorItem('bg_retro_burnt_orange', 'Retro Burnt Orange (BG)', '\\033[48;2;198;117;76m', '\u001b[48;2;198;117;76m', ['background', 'rgb']),
+      new ColorItem('bg_retro_rust', 'Retro Rust (BG)', '\\033[48;2;179;98;66m', '\u001b[48;2;179;98;66m', ['background', 'rgb']),
+      new ColorItem('bg_retro_teal', 'Retro Teal (BG)', '\\033[48;2;53;128;139m', '\u001b[48;2;53;128;139m', ['background', 'rgb']),
+      new ColorItem('bg_retro_harvest_gold', 'Harvest Gold (BG)', '\\033[48;2;219;166;46m', '\u001b[48;2;219;166;46m', ['background', 'rgb']),
+      new ColorItem('bg_retro_brown', 'Retro Brown (BG)', '\\033[48;2;120;87;64m', '\u001b[48;2;120;87;64m', ['background', 'rgb']),
+      new ColorItem('bg_retro_olive', 'Retro Olive (BG)', '\\033[48;2;95;101;50m', '\u001b[48;2;95;101;50m', ['background', 'rgb']),
+
+      // More Metallic Colors - Foreground 
+      new ColorItem('fg_metallic_rose_gold', 'Rose Gold (FG)', '\\033[38;2;231;151;147m', '\u001b[38;2;231;151;147m', ['foreground', 'rgb']),
+      new ColorItem('fg_metallic_platinum', 'Platinum (FG)', '\\033[38;2;227;228;232m', '\u001b[38;2;227;228;232m', ['foreground', 'rgb']),
+      new ColorItem('fg_metallic_gunmetal', 'Gunmetal (FG)', '\\033[38;2;42;52;57m', '\u001b[38;2;42;52;57m', ['foreground', 'rgb']),
+      new ColorItem('fg_metallic_brass', 'Brass (FG)', '\\033[38;2;179;159;79m', '\u001b[38;2;179;159;79m', ['foreground', 'rgb']),
+      new ColorItem('fg_metallic_steel', 'Steel (FG)', '\\033[38;2;128;128;144m', '\u001b[38;2;128;128;144m', ['foreground', 'rgb']),
+      new ColorItem('fg_metallic_titanium', 'Titanium (FG)', '\\033[38;2;170;179;188m', '\u001b[38;2;170;179;188m', ['foreground', 'rgb']),
+
+      // More Metallic Colors - Background
+      new ColorItem('bg_metallic_rose_gold', 'Rose Gold (BG)', '\\033[48;2;231;151;147m', '\u001b[48;2;231;151;147m', ['background', 'rgb']),
+      new ColorItem('bg_metallic_platinum', 'Platinum (BG)', '\\033[48;2;227;228;232m', '\u001b[48;2;227;228;232m', ['background', 'rgb']),
+      new ColorItem('bg_metallic_gunmetal', 'Gunmetal (BG)', '\\033[48;2;42;52;57m', '\u001b[48;2;42;52;57m', ['background', 'rgb']),
+      new ColorItem('bg_metallic_brass', 'Brass (BG)', '\\033[48;2;179;159;79m', '\u001b[48;2;179;159;79m', ['background', 'rgb']),
+      new ColorItem('bg_metallic_steel', 'Steel (BG)', '\\033[48;2;128;128;144m', '\u001b[48;2;128;128;144m', ['background', 'rgb']),
+      new ColorItem('bg_metallic_titanium', 'Titanium (BG)', '\\033[48;2;170;179;188m', '\u001b[48;2;170;179;188m', ['background', 'rgb']),
+
+      // Muted/Dusty Colors - Foreground
+      new ColorItem('fg_dusty_rose', 'Dusty Rose (FG)', '\\033[38;2;185;126;129m', '\u001b[38;2;185;126;129m', ['foreground', 'rgb']),
+      new ColorItem('fg_dusty_blue', 'Dusty Blue (FG)', '\\033[38;2;114;143;170m', '\u001b[38;2;114;143;170m', ['foreground', 'rgb']),
+      new ColorItem('fg_dusty_sage', 'Dusty Sage (FG)', '\\033[38;2;145;166;141m', '\u001b[38;2;145;166;141m', ['foreground', 'rgb']),
+      new ColorItem('fg_dusty_lavender', 'Dusty Lavender (FG)', '\\033[38;2;167;153;180m', '\u001b[38;2;167;153;180m', ['foreground', 'rgb']),
+      new ColorItem('fg_dusty_teal', 'Dusty Teal (FG)', '\\033[38;2;95;158;160m', '\u001b[38;2;95;158;160m', ['foreground', 'rgb']),
+      new ColorItem('fg_dusty_olive', 'Dusty Olive (FG)', '\\033[38;2;139;146;112m', '\u001b[38;2;139;146;112m', ['foreground', 'rgb']),
+      new ColorItem('fg_dusty_mustard', 'Dusty Mustard (FG)', '\\033[38;2;183;156;89m', '\u001b[38;2;183;156;89m', ['foreground', 'rgb']),
+      new ColorItem('fg_dusty_plum', 'Dusty Plum (FG)', '\\033[38;2;156;124;155m', '\u001b[38;2;156;124;155m', ['foreground', 'rgb']),
+
+      // Muted/Dusty Colors - Background
+      new ColorItem('bg_dusty_rose', 'Dusty Rose (BG)', '\\033[48;2;185;126;129m', '\u001b[48;2;185;126;129m', ['background', 'rgb']),
+      new ColorItem('bg_dusty_blue', 'Dusty Blue (BG)', '\\033[48;2;114;143;170m', '\u001b[48;2;114;143;170m', ['background', 'rgb']),
+      new ColorItem('bg_dusty_sage', 'Dusty Sage (BG)', '\\033[48;2;145;166;141m', '\u001b[48;2;145;166;141m', ['background', 'rgb']),
+      new ColorItem('bg_dusty_lavender', 'Dusty Lavender (BG)', '\\033[48;2;167;153;180m', '\u001b[48;2;167;153;180m', ['background', 'rgb']),
+      new ColorItem('bg_dusty_teal', 'Dusty Teal (BG)', '\\033[48;2;95;158;160m', '\u001b[48;2;95;158;160m', ['background', 'rgb']),
+      new ColorItem('bg_dusty_olive', 'Dusty Olive (BG)', '\\033[48;2;139;146;112m', '\u001b[48;2;139;146;112m', ['background', 'rgb']),
+      new ColorItem('bg_dusty_mustard', 'Dusty Mustard (BG)', '\\033[48;2;183;156;89m', '\u001b[48;2;183;156;89m', ['background', 'rgb']),
+      new ColorItem('bg_dusty_plum', 'Dusty Plum (BG)', '\\033[48;2;156;124;155m', '\u001b[48;2;156;124;155m', ['background', 'rgb']),
+
+      // Neon Colors - Additional Set - Foreground
+      new ColorItem('fg_neon_cyan', 'Neon Cyan (FG)', '\\033[38;2;0;255;255m', '\u001b[38;2;0;255;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_purple', 'Neon Purple (FG)', '\\033[38;2;187;0;255m', '\u001b[38;2;187;0;255m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_lime', 'Neon Lime (FG)', '\\033[38;2;204;255;0m', '\u001b[38;2;204;255;0m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_magenta', 'Neon Magenta (FG)', '\\033[38;2;255;0;212m', '\u001b[38;2;255;0;212m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_coral', 'Neon Coral (FG)', '\\033[38;2;255;110;89m', '\u001b[38;2;255;110;89m', ['foreground', 'rgb']),
+      new ColorItem('fg_neon_turquoise', 'Neon Turquoise (FG)', '\\033[38;2;0;233;214m', '\u001b[38;2;0;233;214m', ['foreground', 'rgb']),
+
+      // Neon Colors - Additional Set - Background
+      new ColorItem('bg_neon_cyan', 'Neon Cyan (BG)', '\\033[48;2;0;255;255m', '\u001b[48;2;0;255;255m', ['background', 'rgb']),
+      new ColorItem('bg_neon_purple', 'Neon Purple (BG)', '\\033[48;2;187;0;255m', '\u001b[48;2;187;0;255m', ['background', 'rgb']),
+      new ColorItem('bg_neon_lime', 'Neon Lime (BG)', '\\033[48;2;204;255;0m', '\u001b[48;2;204;255;0m', ['background', 'rgb']),
+      new ColorItem('bg_neon_magenta', 'Neon Magenta (BG)', '\\033[48;2;255;0;212m', '\u001b[48;2;255;0;212m', ['background', 'rgb']),
+      new ColorItem('bg_neon_coral', 'Neon Coral (BG)', '\\033[48;2;255;110;89m', '\u001b[48;2;255;110;89m', ['background', 'rgb']),
+      new ColorItem('bg_neon_turquoise', 'Neon Turquoise (BG)', '\\033[48;2;0;233;214m', '\u001b[48;2;0;233;214m', ['background', 'rgb'])
+
+    ];
+
+    // Toast component CSS
+    const toastStyles = document.createElement('style');
+    toastStyles.textContent = `
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        background-color: rgba(35, 42, 59, 0.95);
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        transform: translateY(-20px);
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        backdrop-filter: blur(8px);
+        border-left: 4px solid var(--colorify-accent-green);
+      }
+      
+      .toast-error {
+        border-left-color: #EF4444;
+      }
+    `;
+    document.head.appendChild(toastStyles);
+
+    // Storage utilities
+    const loadColors = () => {
+      try {
+        const savedColors = localStorage.getItem('colorify_colors');
+        return savedColors ? JSON.parse(savedColors) : [];
+      } catch (error) {
+        console.error('Failed to load colors from localStorage:', error);
+        return [];
+      }
+    };
+
+    const saveColors = (colors) => {
+      try {
+        localStorage.setItem('colorify_colors', JSON.stringify(colors));
+      } catch (error) {
+        console.error('Failed to save colors to localStorage:', error);
+      }
+    };
+
+    // File generation and download
+    const generateColorsHeaderFile = (colors) => {
+      const codes = colors.map(color => "\"" + color.code + "\"").join(', ');
+      const names = colors.map(color => `"${color.name}"`).join(', ');
+      
+      const content = `// Generated by Colorify
+#ifndef COLORIFY_COLORS_HPP
+#define COLORIFY_COLORS_HPP
+
+#include <vector>
+#include <string>
+#include <algorithm>
+
+namespace Colorify {
+    std::vector<std::string> codes = { ${codes} };
+    std::vector<std::string> names = { ${names} };
+
+    // Helper function to get the index of a color by name
+    int getColorIndex(const std::string& name) {
+        for (size_t i = 0; i < names.size(); ++i) {
+            if (names[i] == name) {
+                return i;
+            }
+        }
+        return -1; // Color not found
+    }
+}
+
+#endif // COLORIFY_COLORS_HPP
+`;
+      
+      return new Blob([content], { type: 'text/plain' });
+    };
+
+    const downloadFile = (blob, filename) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    };
+
+    // App state
+    const state = {
+      activeSection: 'gallery', // Start with gallery view
+      userColors: additionalColors, // Initialize with our additional colors
+      selectedItems: [],
+      cheatsheetSearchQuery: '',
+      gallerySearchQuery: '',
+      selectedTags: [],
+      isUnionFilter: true,
+      sortBy: 'name',
+      showFilters: false,
+      generatorColor: '#98D35C',
+      generatorName: 'Custom Green',
+      generatorIsForeground: true,
+      generatorTags: ['foreground', 'rgb']
+    };
+
+    // UI components
+    const createColorCard = (color, isSelected, onClick) => {
+      const card = document.createElement('div');
+      card.className = `color-card ${isSelected ? 'selected' : ''}`;
+      card.dataset.id = color.id;
+      card.addEventListener('click', () => onClick(color.id));
+      
+      // Create the swatch preview content based on color type
+      let swatchContent = '';
+      
+      if (color.tags.includes('foreground')) {
+        // For foreground colors, show text in that color
+        swatchContent = `
+          <div class="color-swatch">
+            <div class="color-swatch-bg" style="background-color: var(--colorify-dark);">
+              <span class="color-swatch-content" style="color: ${getForegroundColor(color)};">Text Preview</span>
+            </div>
+          </div>
+        `;
+      } else if (color.tags.includes('background')) {
+        // For background colors, show background in that color
+        swatchContent = `
+          <div class="color-swatch">
+            <div class="color-swatch-bg" style="background-color: ${getBackgroundColor(color)};">
+              <span class="color-swatch-content" style="color: #000;">Text Preview</span>
+            </div>
+          </div>
+        `;
+      } else if (color.tags.includes('cursor') || color.tags.includes('movement') || color.tags.includes('erase') || color.tags.includes('save')) {
+        // For cursor/control codes, show a terminal-like preview
+        swatchContent = `
+          <div class="color-swatch">
+            <div class="color-swatch-bg" style="background-color: var(--colorify-dark);">
+              <span class="color-swatch-content" style="color: #FFF; font-family: monospace;">${getTerminalPreview(color)}</span>
+            </div>
+          </div>
+        `;
+      } else if (color.tags.includes('formatting')) {
+        // For formatting codes like bold, italic, etc.
+        swatchContent = `
+          <div class="color-swatch">
+            <div class="color-swatch-bg" style="background-color: var(--colorify-dark);">
+              <span class="color-swatch-content" style="${getFormattingStyle(color)}">Text Preview</span>
+            </div>
+          </div>
+        `;
+      } else {
+        // For special codes, just show a generic preview
+        swatchContent = `
+          <div class="color-swatch">
+            <div class="color-swatch-bg" style="background-color: var(--colorify-dark);">
+              <span class="color-swatch-content" style="color: #FFF;">Special Code</span>
+            </div>
+          </div>
+        `;
+      }
+      
+      card.innerHTML = `
+        <div class="color-card-inner">
+          ${swatchContent}
+          <div class="color-card-header">
+            <h3 class="color-name">${color.name}</h3>
+            <button class="copy-button" aria-label="Copy to clipboard">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="color-code">${color.code}</div>
+          <div class="tags-container">
+            ${color.tags.map(tag => `<span class="tag ${tag}">${tag}</span>`).join('')}
+          </div>
+        </div>
+      `;
+      
+      const copyButton = card.querySelector('.copy-button');
+      copyButton.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const success = await copyToClipboard(color.code);
+        if (success) {
+          card.classList.add('copy-animation');
+          
+          // Change the icon to a check mark temporarily
+          const originalInnerHTML = copyButton.innerHTML;
+          copyButton.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          `;
+          
+          setTimeout(() => {
+            card.classList.remove('copy-animation');
+            copyButton.innerHTML = originalInnerHTML;
+          }, 2000);
+          
+          showToast(`Copied ${color.name} to clipboard!`);
+        } else {
+          showToast('Failed to copy to clipboard', 'error');
+        }
+      });
+      
+      return card;
+    };
+
+    // Helper functions for color preview
+    function getForegroundColor(color) {
+      // For RGB colors, extract from preview
+      if (color.tags.includes('rgb') && color.preview.includes('38;2;')) {
+        const match = color.preview.match(/38;2;(\d+);(\d+);(\d+)/);
+        if (match) {
+          return `rgb(${match[1]}, ${match[2]}, ${match[3]})`;
+        }
+      }
+      
+      // Default colors for standard foreground
+      const colorMap = {
+        "fg_black": "#000000",
+        "fg_red": "#FF0000",
+        "fg_green": "#00FF00",
+        "fg_yellow": "#FFFF00",
+        "fg_blue": "#0000FF",
+        "fg_magenta": "#FF00FF",
+        "fg_cyan": "#00FFFF",
+        "fg_white": "#FFFFFF",
+        "fg_bright_black": "#808080",
+        "fg_bright_red": "#FF5555",
+        "fg_bright_green": "#55FF55",
+        "fg_bright_yellow": "#FFFF55",
+        "fg_bright_blue": "#5555FF",
+        "fg_bright_magenta": "#FF55FF",
+        "fg_bright_cyan": "#55FFFF",
+        "fg_bright_white": "#FFFFFF"
+      };
+      
+      return colorMap[color.id] || "#FFFFFF";
+    }
+
+    function getBackgroundColor(color) {
+      // For RGB colors, extract from preview
+      if (color.tags.includes('rgb') && color.preview.includes('48;2;')) {
+        const match = color.preview.match(/48;2;(\d+);(\d+);(\d+)/);
+        if (match) {
+          return `rgb(${match[1]}, ${match[2]}, ${match[3]})`;
+        }
+      }
+      
+      // Default colors for standard background
+      const colorMap = {
+        "bg_black": "#000000",
+        "bg_red": "#FF0000",
+        "bg_green": "#00FF00",
+        "bg_yellow": "#FFFF00",
+        "bg_blue": "#0000FF", 
+        "bg_magenta": "#FF00FF",
+        "bg_cyan": "#00FFFF",
+        "bg_white": "#FFFFFF"
+      };
+      
+      return colorMap[color.id] || "#232A3B";
+    }
+
+    function getFormattingStyle(color) {
+      let style = "color: #FFF;";
+      
+      if (color.tags.includes('bold')) {
+        style += "font-weight: bold;";
+      }
+      if (color.tags.includes('italic')) {
+        style += "font-style: italic;";
+      }
+      if (color.tags.includes('underline')) {
+        style += "text-decoration: underline;";
+      }
+      if (color.id === 'dim') {
+        style += "opacity: 0.7;";
+      }
+      if (color.id === 'blink') {
+        style += "animation: blink 1s infinite;";
+      }
+      if (color.id === 'reverse') {
+        style += "background-color: #FFF; color: #1A1F2C;";
+      }
+      if (color.id === 'hidden') {
+        style += "opacity: 0;";
+      }
+      
+      return style;
+    }
+
+    function getTerminalPreview(color) {
+      if (color.tags.includes('cursor')) {
+        return "│▒▒▒▒▒▒▒│";
+      } else if (color.tags.includes('movement')) {
+        return "↓→←↑";
+      } else if (color.tags.includes('erase')) {
+        return "[Erased]";
+      } else if (color.tags.includes('save')) {
+        return "[S/R]";
+      } else {
+        return "■■■■";
+      }
+    }
+
+    const createEmptyState = (message) => {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state col-span-full';
+      empty.innerHTML = `
+        <div class="empty-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <h3 class="empty-title">No items found</h3>
+        <p class="empty-description">${message}</p>
+      `;
+      return empty;
+    };
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', () => {
+      // Load saved colors and merge with additional colors
+      const savedColors = loadColors();
+      // Only use saved colors if they exist, otherwise use our predefined colors
+      state.userColors = savedColors.length > 0 ? savedColors : state.userColors;
+      
+      // Initialize tag buttons in the generator
+      const tagButtonsContainer = document.getElementById('tag-buttons');
+      colorTags.forEach(tag => {
+        const button = document.createElement('button');
+        button.className = `tag-button ${state.generatorTags.includes(tag) ? 'active tag ' + tag : ''}`;
+        button.textContent = tag;
+        button.disabled = (tag === 'foreground' && state.generatorIsForeground) || 
+                          (tag === 'background' && !state.generatorIsForeground);
+        
+        button.addEventListener('click', () => {
+          const isActive = state.generatorTags.includes(tag);
+          
+          if (isActive) {
+            state.generatorTags = state.generatorTags.filter(t => t !== tag);
+            button.classList.remove('active', 'tag', tag);
+          } else {
+            state.generatorTags.push(tag);
+            button.classList.add('active', 'tag', tag);
+          }
+        });
+        
+        tagButtonsContainer.appendChild(button);
+      });
+      
+      // Initialize gallery tag filters
+      const galleryTagFilters = document.getElementById('gallery-tag-filters');
+      colorTags.forEach(tag => {
+        const button = document.createElement('button');
+        button.className = `tag-button`;
+        button.textContent = tag;
+        
+        button.addEventListener('click', () => {
+          const isSelected = state.selectedTags.includes(tag);
+          
+          if (isSelected) {
+            state.selectedTags = state.selectedTags.filter(t => t !== tag);
+            button.classList.remove('active', 'tag', tag);
+          } else {
+            state.selectedTags.push(tag);
+            button.classList.add('active', 'tag', tag);
+          }
+          
+          renderGallery();
+        });
+        
+        galleryTagFilters.appendChild(button);
+      });
+      
+      // Initialize generator
+      updateGeneratorPreview();
+      
+      // Navigation
+      const navButtons = document.querySelectorAll('.nav-button');
+      navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          state.activeSection = button.dataset.section;
+          updateActiveSection();
+        });
+      });
+      
+      const sectionSelect = document.getElementById('section-select');
+      sectionSelect.addEventListener('change', () => {
+        state.activeSection = sectionSelect.value;
+        updateActiveSection();
+      });
+      
+      // Init sections
+      renderCheatsheet();
+      renderGallery();
+      
+      // Make sure the UI reflects the active section
+      updateActiveSection();
+      
+      // Log the number of colors for debugging
+      console.log(`Total colors in gallery: ${ansiCheatsheet.length + state.userColors.length}`);
+      console.log(`- ANSI cheatsheet colors: ${ansiCheatsheet.length}`);
+      console.log(`- User colors: ${state.userColors.length}`);
+      
+      // Color picker and text input synchronization
+      const colorPicker = document.getElementById('color-picker');
+      const colorHex = document.getElementById('color-hex');
+      
+      colorPicker.addEventListener('input', (e) => {
+        state.generatorColor = e.target.value;
+        colorHex.value = state.generatorColor;
+        updateGeneratorPreview();
+      });
+      
+      colorHex.addEventListener('input', (e) => {
+        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+          state.generatorColor = e.target.value;
+          colorPicker.value = state.generatorColor;
+          updateGeneratorPreview();
+        }
+      });
+      
+      // Type switcher
+      const foregroundButton = document.getElementById('foreground-button');
+      const backgroundButton = document.getElementById('background-button');
+      
+      foregroundButton.addEventListener('click', () => {
+        if (!state.generatorIsForeground) {
+          state.generatorIsForeground = true;
+          foregroundButton.classList.add('active');
+          backgroundButton.classList.remove('active');
+          updateTypeTagButtons();
+          updateGeneratorPreview();
+        }
+      });
+      
+      backgroundButton.addEventListener('click', () => {
+        if (state.generatorIsForeground) {
+          state.generatorIsForeground = false;
+          foregroundButton.classList.remove('active');
+          backgroundButton.classList.add('active');
+          updateTypeTagButtons();
+          updateGeneratorPreview();
+        }
+      });
+      
+      // Name input
+      const colorName = document.getElementById('color-name');
+      colorName.addEventListener('input', (e) => {
+        state.generatorName = e.target.value;
+      });
+      
+      // Copy code button
+      const copyCodeButton = document.getElementById('copy-code-button');
+      copyCodeButton.addEventListener('click', async () => {
+        const codeOutput = document.getElementById('code-output');
+        const success = await copyToClipboard(codeOutput.textContent);
+        
+        if (success) {
+          // Change icon to checkmark
+          copyCodeButton.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          `;
+          
+          setTimeout(() => {
+            copyCodeButton.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            `;
+          }, 2000);
+          
+          showToast('Code copied to clipboard!');
+        } else {
+          showToast('Failed to copy to clipboard', 'error');
+        }
+      });
+      
+      // Save color button
+      const saveColorButton = document.getElementById('save-color-button');
+      saveColorButton.addEventListener('click', () => {
+        if (!state.generatorName.trim()) {
+          showToast('Please provide a name for your color', 'error');
+          return;
+        }
+        
+        const codeOutput = document.getElementById('code-output');
+        const ansiCode = hexToAnsi(state.generatorColor, state.generatorIsForeground);
+        
+        const newColor = new ColorItem(
+          generateId(),
+          state.generatorName.trim(),
+          toCppStringLiteral(ansiCode),
+          ansiCode,
+          [...state.generatorTags]
+        );
+        
+        state.userColors.push(newColor);
+        saveColors(state.userColors);
+        
+        showToast(`"${state.generatorName}" has been added to your color gallery!`);
+        
+        // Reset generator
+        state.generatorName = '';
+        colorName.value = '';
+      });
+      
+      // Cheatsheet search
+      const cheatsheetSearch = document.getElementById('cheatsheet-search');
+      cheatsheetSearch.addEventListener('input', (e) => {
+        state.cheatsheetSearchQuery = e.target.value;
+        
+        // Show shimmer effect
+        const shimmer = cheatsheetSearch.nextElementSibling;
+        shimmer.style.opacity = '1';
+        
+        // Debounce the search
+        clearTimeout(cheatsheetSearch.searchTimeout);
+        cheatsheetSearch.searchTimeout = setTimeout(() => {
+          renderCheatsheet();
+          shimmer.style.opacity = '0';
+        }, 300);
+      });
+      
+      // Gallery search
+      const gallerySearch = document.getElementById('gallery-search');
+      gallerySearch.addEventListener('input', (e) => {
+        state.gallerySearchQuery = e.target.value;
+        renderGallery();
+      });
+      
+      // Filter toggle
+      const filterButton = document.getElementById('filter-button');
+      const filtersPanel = document.getElementById('filters-panel');
+      const closeFiltersButton = document.getElementById('close-filters-button');
+      
+      filterButton.addEventListener('click', () => {
+        state.showFilters = !state.showFilters;
+        filtersPanel.style.display = state.showFilters ? 'block' : 'none';
+        filterButton.classList.toggle('active', state.showFilters);
+      });
+      
+      closeFiltersButton.addEventListener('click', () => {
+        state.showFilters = false;
+        filtersPanel.style.display = 'none';
+        filterButton.classList.remove('active');
+      });
+      
+      // Filter mode toggle
+      const unionFilterButton = document.getElementById('union-filter-button');
+      const intersectionFilterButton = document.getElementById('intersection-filter-button');
+      
+      unionFilterButton.addEventListener('click', () => {
+        if (!state.isUnionFilter) {
+          state.isUnionFilter = true;
+          unionFilterButton.classList.add('active');
+          intersectionFilterButton.classList.remove('active');
+          renderGallery();
+        }
+      });
+      
+      intersectionFilterButton.addEventListener('click', () => {
+        if (state.isUnionFilter) {
+          state.isUnionFilter = false;
+          unionFilterButton.classList.remove('active');
+          intersectionFilterButton.classList.add('active');
+          renderGallery();
+        }
+      });
+      
+      // Sort select
+      const sortSelect = document.getElementById('sort-select');
+      sortSelect.addEventListener('change', () => {
+        state.sortBy = sortSelect.value;
+        renderGallery();
+      });
+      
+      // Select all button
+      const selectAllButton = document.getElementById('select-all-button');
+      selectAllButton.addEventListener('click', () => {
+        const filteredColors = getFilteredGalleryColors();
+        
+        if (state.selectedItems.length === filteredColors.length) {
+          state.selectedItems = [];
+        } else {
+          state.selectedItems = filteredColors.map(color => color.id);
+        }
+        
+        renderGallery();
+      });
+      
+      // Download button
+      const downloadButton = document.getElementById('download-button');
+      downloadButton.addEventListener('click', () => {
+        const allColors = [...ansiCheatsheet, ...state.userColors];
+        const colorsToDownload = state.selectedItems.length > 0
+          ? allColors.filter(color => state.selectedItems.includes(color.id))
+          : allColors;
+        
+        if (colorsToDownload.length === 0) {
+          showToast('No colors selected for download', 'error');
+          return;
+        }
+        
+        const blob = generateColorsHeaderFile(colorsToDownload);
+        downloadFile(blob, 'colors.hpp');
+        
+        showToast(`${colorsToDownload.length} colors exported to colors.hpp`);
+      });
+      
+    });
+
+    // Renderer functions
+    const updateActiveSection = () => {
+      // Update nav buttons
+      document.querySelectorAll('.nav-button').forEach(button => {
+        button.classList.toggle('active', button.dataset.section === state.activeSection);
+      });
+      
+      // Update mobile select
+      document.getElementById('section-select').value = state.activeSection;
+      
+      // Show active section, hide others
+      document.querySelectorAll('.section').forEach(section => {
+        const sectionId = section.id.replace('-section', '');
+        section.classList.toggle('active', sectionId === state.activeSection);
+      });
+    };
+
+    const renderCheatsheet = () => {
+      const cheatsheetGrid = document.getElementById('cheatsheet-grid');
+      cheatsheetGrid.innerHTML = '';
+      
+      const filteredColors = ansiCheatsheet.filter(color => {
+        return color.name.toLowerCase().includes(state.cheatsheetSearchQuery.toLowerCase()) ||
+               color.tags.some(tag => tag.toLowerCase().includes(state.cheatsheetSearchQuery.toLowerCase()));
+      });
+      
+      if (filteredColors.length === 0) {
+        cheatsheetGrid.appendChild(createEmptyState('Try adjusting your search term.'));
+        return;
+      }
+      
+      filteredColors.forEach(color => {
+        const isSelected = state.selectedItems.includes(color.id);
+        const card = createColorCard(color, isSelected, handleColorSelect);
+        cheatsheetGrid.appendChild(card);
+      });
+    };
+
+    const getFilteredGalleryColors = () => {
+      const allColors = [...ansiCheatsheet, ...state.userColors];
+      
+      // Filter by search query
+      const searchFiltered = allColors.filter(color => {
+        return color.name.toLowerCase().includes(state.gallerySearchQuery.toLowerCase()) ||
+               color.code.toLowerCase().includes(state.gallerySearchQuery.toLowerCase());
+      });
+      
+      // Filter by tags
+      if (state.selectedTags.length === 0) {
+        return searchFiltered;
+      }
+      
+      return searchFiltered.filter(color => {
+        if (state.isUnionFilter) {
+          // OR logic - any tag matches
+          return state.selectedTags.some(tag => color.tags.includes(tag));
+        } else {
+          // AND logic - all tags match
+          return state.selectedTags.every(tag => color.tags.includes(tag));
+        }
+      });
+    };
+
+    const renderGallery = () => {
+      const galleryGrid = document.getElementById('gallery-grid');
+      galleryGrid.innerHTML = '';
+
+      const filteredColors = getFilteredGalleryColors();
+
+      // Sort colors
+      const sortedColors = [...filteredColors].sort((a, b) => {
+        switch (state.sortBy) {
+          case 'name':
+            return a.name.localeCompare(b.name);
+          case 'date':
+            return b.createdAt - a.createdAt;
+          default:
+            return 0;
+        }
+      });
+
+      // Update status text
+      document.getElementById('gallery-status-text').textContent =
+        `${sortedColors.length} colors • ${state.selectedItems.length} selected`;
+
+      // Update select all button text
+      document.getElementById('select-all-button').textContent =
+        state.selectedItems.length === sortedColors.length ? 'Deselect All' : 'Select All';
+
+      if (sortedColors.length === 0) {
+        galleryGrid.appendChild(createEmptyState('Try adjusting your search or filter settings.'));
+        return;
+      }
+
+      sortedColors.forEach(color => {
+        const isSelected = state.selectedItems.includes(color.id);
+        const card = createColorCard(color, isSelected, handleColorSelect);
+        galleryGrid.appendChild(card);
+      });
+    };
+
+    const updateGeneratorPreview = () => {
+      // Update color preview
+      const previewBox = document.getElementById('color-preview');
+      const previewText = previewBox.querySelector('.preview-text');
+      
+      if (state.generatorIsForeground) {
+        previewBox.style.backgroundColor = '#1A1F2C';
+        previewText.style.color = state.generatorColor;
+      } else {
+        previewBox.style.backgroundColor = state.generatorColor;
+        previewText.style.color = '#1A1F2C';
+      }
+      
+      // Update code output
+      const ansiCode = hexToAnsi(state.generatorColor, state.generatorIsForeground);
+      const cppCode = toCppStringLiteral(ansiCode);
+      const codeOutput = document.getElementById('code-output');
+      codeOutput.textContent = cppCode;
+    };
+
+    const updateTypeTagButtons = () => {
+      // Disable foreground/background tag buttons based on selected type
+      const tagButtons = document.querySelectorAll('#tag-buttons .tag-button');
+      tagButtons.forEach(button => {
+        const tag = button.textContent;
+        
+        if (tag === 'foreground') {
+          button.disabled = state.generatorIsForeground;
+          
+          if (state.generatorIsForeground && !state.generatorTags.includes('foreground')) {
+            state.generatorTags.push('foreground');
+            button.classList.add('active', 'tag', 'foreground');
+          }
+          
+          if (!state.generatorIsForeground && state.generatorTags.includes('foreground')) {
+            state.generatorTags = state.generatorTags.filter(t => t !== 'foreground');
+            button.classList.remove('active', 'tag', 'foreground');
+          }
+        }
+        
+        if (tag === 'background') {
+          button.disabled = !state.generatorIsForeground;
+          
+          if (!state.generatorIsForeground && !state.generatorTags.includes('background')) {
+            state.generatorTags.push('background');
+            button.classList.add('active', 'tag', 'background');
+          }
+          
+          if (state.generatorIsForeground && state.generatorTags.includes('background')) {
+            state.generatorTags = state.generatorTags.filter(t => t !== 'background');
+            button.classList.remove('active', 'tag', 'background');
+          }
+        }
+      });
+    };
+
+    const handleColorSelect = (id) => {
+      if (state.selectedItems.includes(id)) {
+        state.selectedItems = state.selectedItems.filter(itemId => itemId !== id);
+      } else {
+        state.selectedItems.push(id);
+      }
+      
+      // Update all sections
+      renderCheatsheet();
+      renderGallery();
+    };
+  </script>
+</body>
+</html>
